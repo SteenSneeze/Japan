@@ -15,6 +15,7 @@ async function initDb() {
         password_hash VARCHAR(255) NOT NULL,
         display_name VARCHAR(100) NOT NULL,
         avatar_color VARCHAR(7) DEFAULT '#C0392B',
+        must_change_password BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
@@ -90,6 +91,7 @@ async function initDb() {
         ('Tokyo', 35.6762, 139.6503, 3)
       ON CONFLICT DO NOTHING;
     `);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE`);
     console.log('Database initialised');
   } finally {
     client.release();

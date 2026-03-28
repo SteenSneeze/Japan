@@ -31,8 +31,13 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  async function changePassword(current_password, new_password) {
+    await api.changePassword(current_password, new_password);
+    setUser(prev => ({ ...prev, must_change_password: false }));
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
