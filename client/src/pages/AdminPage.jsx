@@ -46,7 +46,7 @@ export default function AdminPage() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
         {/* Create user */}
-        <div style={{ background: 'var(--paper-warm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-soft)' }}>
+        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-soft)' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', marginBottom: '0.25rem' }}>Create account</h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '0.5rem' }}>Add a friend to the trip group.</p>
           <form onSubmit={handleCreate}>
@@ -80,7 +80,7 @@ export default function AdminPage() {
           ) : (
             <div style={{ display: 'grid', gap: '8px' }}>
               {users.map(u => (
-                <div key={u.id} style={{ background: 'var(--paper-warm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 1rem', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: 'var(--shadow-soft)' }}>
+                <div key={u.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 1rem', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: 'var(--shadow-soft)' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: u.avatar_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 500, fontSize: '13px', color: 'white', flexShrink: 0 }}>
                     {u.display_name.slice(0,2).toUpperCase()}
                   </div>
