@@ -67,7 +67,7 @@ export default function AddPlaceModal({ onClose, onAdd, cities, defaultCity }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <label style={lbl}>Price range</label>
+              <label style={lbl}>Price</label>
               <input value={data.price_range} onChange={e => set('price_range', e.target.value)} placeholder="¥ / ¥¥ / ¥¥¥" />
             </div>
             <div>
