@@ -85,11 +85,12 @@ async function initDb() {
       );
 
       INSERT INTO cities (name, lat, lng, order_index)
-      VALUES
-        ('Osaka', 34.6937, 135.5023, 1),
-        ('Kyoto', 35.0116, 135.7681, 2),
-        ('Tokyo', 35.6762, 139.6503, 3)
-      ON CONFLICT DO NOTHING;
+      SELECT * FROM (VALUES
+        ('Osaka', 34.6937::DECIMAL, 135.5023::DECIMAL, 1),
+        ('Kyoto', 35.0116::DECIMAL, 135.7681::DECIMAL, 2),
+        ('Tokyo', 35.6762::DECIMAL, 139.6503::DECIMAL, 3)
+      ) AS v(name, lat, lng, order_index)
+      WHERE NOT EXISTS (SELECT 1 FROM cities);
     `);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE`);
     console.log('Database initialised');
