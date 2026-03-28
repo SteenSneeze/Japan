@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/register', requireAuth, async (req, res) => {
+router.post('/register', async (req, res) => {
   const { username, password, display_name, avatar_color } = req.body;
   if (!username || !password || !display_name) {
     return res.status(400).json({ error: 'username, password and display_name required' });
