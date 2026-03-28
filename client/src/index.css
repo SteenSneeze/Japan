@@ -35,21 +35,6 @@ body {
   min-height: 100vh;
 }
 
-/* Scanline overlay */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,20,0.15) 2px,
-    rgba(0,0,20,0.15) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-}
 
 h1, h2, h3, h4, h5 {
   font-family: var(--font-display);

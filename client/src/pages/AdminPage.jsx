@@ -16,16 +16,6 @@ export default function AdminPage() {
     api.users().then(setUsers).catch(() => {});
   }, []);
 
-  if (!user) {
-    return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ color: 'var(--ink-light)', marginBottom: '1rem' }}>You need to be signed in to access admin.</p>
-        </div>
-      </div>
-    );
-  }
-
   async function handleCreate(e) {
     e.preventDefault();
     setError(''); setSuccess('');
@@ -56,7 +46,7 @@ export default function AdminPage() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
         {/* Create user */}
-        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-soft)' }}>
+        <div style={{ background: 'var(--paper-warm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-soft)' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', marginBottom: '0.25rem' }}>Create account</h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '0.5rem' }}>Add a friend to the trip group.</p>
           <form onSubmit={handleCreate}>
@@ -90,7 +80,7 @@ export default function AdminPage() {
           ) : (
             <div style={{ display: 'grid', gap: '8px' }}>
               {users.map(u => (
-                <div key={u.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 1rem', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: 'var(--shadow-soft)' }}>
+                <div key={u.id} style={{ background: 'var(--paper-warm)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '12px 1rem', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: 'var(--shadow-soft)' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: u.avatar_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 500, fontSize: '13px', color: 'white', flexShrink: 0 }}>
                     {u.display_name.slice(0,2).toUpperCase()}
                   </div>
@@ -98,7 +88,7 @@ export default function AdminPage() {
                     <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--ink)' }}>{u.display_name}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--ink-light)' }}>@{u.username}</div>
                   </div>
-                  {u.id === user.id && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--red)', background: 'var(--red-pale)', padding: '2px 8px', borderRadius: '2px', fontWeight: 500 }}>You</span>}
+                  {user && u.id === user.id && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--red)', background: 'var(--red-pale)', padding: '2px 8px', borderRadius: '2px', fontWeight: 500 }}>You</span>}
                 </div>
               ))}
             </div>
