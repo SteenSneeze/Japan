@@ -16,6 +16,16 @@ export default function AdminPage() {
     api.users().then(setUsers).catch(() => {});
   }, []);
 
+  if (!user || user.id !== 1) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--ink-light)', marginBottom: '1rem' }}>You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
   async function handleCreate(e) {
     e.preventDefault();
     setError(''); setSuccess('');
