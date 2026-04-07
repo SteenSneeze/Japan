@@ -71,5 +71,17 @@ export const api = {
   accommodations: () => req('GET', '/accommodations'),
   createAccommodation: (data) => req('POST', '/accommodations', data),
   updateAccommodation: (id, data) => req('PUT', `/accommodations/${id}`, data),
-  deleteAccommodation: (id) => req('DELETE', `/accommodations/${id}`)
+  deleteAccommodation: (id) => req('DELETE', `/accommodations/${id}`),
+
+  // Links
+  links: () => req('GET', '/links'),
+  createLink: (data) => req('POST', '/links', data),
+  updateLink: (id, data) => req('PUT', `/links/${id}`, data),
+  deleteLink: (id) => req('DELETE', `/links/${id}`),
+
+  // Costs
+  costs: () => req('GET', '/costs'),
+  createCost: (data) => req('POST', '/costs', data),
+  updateCost: (id, data) => req('PUT', `/costs/${id}`, data),
+  deleteCost: (id) => req('DELETE', `/costs/${id}`)
 };

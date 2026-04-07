@@ -10,6 +10,8 @@ const placesRoutes = require('./routes/places');
 const itineraryRoutes = require('./routes/itinerary');
 const flightsRoutes = require('./routes/flights');
 const accommodationsRoutes = require('./routes/accommodations');
+const linksRoutes = require('./routes/links');
+const costsRoutes = require('./routes/costs');
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use('/api/places', placesRoutes);
 app.use('/api/itinerary', itineraryRoutes);
 app.use('/api/flights', flightsRoutes);
 app.use('/api/accommodations', accommodationsRoutes);
+app.use('/api/links', linksRoutes);
+app.use('/api/costs', costsRoutes);
 
 // Serve built React client in production
 if (process.env.NODE_ENV === 'production') {

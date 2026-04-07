@@ -116,6 +116,29 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS links (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        url TEXT NOT NULL,
+        description TEXT,
+        category VARCHAR(50) DEFAULT 'other' CHECK (category IN ('safety','visa','travel-info','emergency','booking','other')),
+        added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS costs (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        currency VARCHAR(10) DEFAULT 'GBP',
+        category VARCHAR(50) DEFAULT 'other' CHECK (category IN ('flights','accommodation','food','activities','transport','shopping','other')),
+        date DATE,
+        paid_by VARCHAR(100),
+        notes TEXT,
+        added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
       INSERT INTO cities (name, lat, lng, order_index)
       SELECT * FROM (VALUES
         ('Osaka', 34.6937::DECIMAL, 135.5023::DECIMAL, 1),
