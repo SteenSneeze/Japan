@@ -89,7 +89,7 @@ const S = {
 
 function fmt(dt) {
   if (!dt) return null;
-  return new Date(dt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(dt.slice(0, 16)).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function fmtDate(d) {
@@ -498,22 +498,24 @@ function CostCard({ cost, onEdit, onDelete, canEdit }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'flights',       label: 'Flights' },
-  { id: 'accommodation', label: 'Accommodation' },
-  { id: 'links',         label: 'Important Links' },
-  { id: 'costs',         label: 'Costs' },
+  { id: 'costs', label: 'Costs' },
+  { id: 'links', label: 'Links' },
 ];
 
-const ADD_LABELS = {
-  flights: 'Flight',
-  accommodation: 'Accommodation',
-  links: 'Link',
-  costs: 'Cost'
+const sectionHead = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  margin: '2rem 0 1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)'
+};
+const sectionTitle = { fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--ink)' };
+const smallAddBtn = {
+  background: 'var(--ink)', color: 'white', border: 'none',
+  padding: '0.35rem 0.9rem', borderRadius: 'var(--radius)',
+  fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-body)'
 };
 
 export default function LogisticsPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState('flights');
+  const [tab, setTab] = useState('costs');
   const [costFilter, setCostFilter] = useState('all');
   const [flights, setFlights] = useState([]);
   const [accoms, setAccoms] = useState([]);
@@ -529,8 +531,7 @@ export default function LogisticsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Counts for tab labels
-  const counts = { flights: flights.length, accommodation: accoms.length, links: links.length, costs: costs.length };
+  const counts = { costs: flights.length + accoms.length + costs.length, links: links.length };
 
   function upsert(setter, saved) {
     setter(prev => {
@@ -551,11 +552,9 @@ export default function LogisticsPage() {
   return (
     <div style={S.page}>
       <div style={S.header}>
-        <h1 style={S.title}>旅行 Logistics</h1>
-        {user && (
-          <button style={S.addBtn} onClick={() => setModal({ type: tab, data: null })}>
-            + Add {ADD_LABELS[tab]}
-          </button>
+        <h1 style={S.title}>費用 Costs</h1>
+        {tab === 'links' && user && (
+          <button style={S.addBtn} onClick={() => setModal({ type: 'links', data: null })}>+ Add Link</button>
         )}
       </div>
 
@@ -567,48 +566,45 @@ export default function LogisticsPage() {
         ))}
       </div>
 
-      {tab === 'flights' && (
-        flights.length === 0
-          ? <div style={S.empty}>No flights yet.{user ? ' Click "+ Add Flight" to get started.' : ' Sign in to add flights.'}</div>
-          : flights.map(f => <FlightCard key={f.id} flight={f} canEdit={!!user} onEdit={d => setModal({ type: 'flights', data: d })} onDelete={id => del(setFlights, api.deleteFlight, id, 'flight')} />)
-      )}
-
-      {tab === 'accommodation' && (
-        accoms.length === 0
-          ? <div style={S.empty}>No accommodation yet.{user ? ' Click "+ Add Accommodation" to get started.' : ' Sign in to add accommodation.'}</div>
-          : accoms.map(a => <AccomCard key={a.id} accom={a} canEdit={!!user} onEdit={d => setModal({ type: 'accommodation', data: d })} onDelete={id => del(setAccoms, api.deleteAccommodation, id, 'accommodation')} />)
-      )}
-
-      {tab === 'links' && (
-        <>
-          {links.length === 0
-            ? <div style={S.empty}>No links yet.{user ? ' Add important links like Safe Traveler, visa info, emergency contacts…' : ' Sign in to add links.'}</div>
-            : links.map(l => <LinkCard key={l.id} link={l} canEdit={!!user} onEdit={d => setModal({ type: 'links', data: d })} onDelete={id => del(setLinks, api.deleteLink, id, 'link')} />)
-          }
-        </>
-      )}
-
       {tab === 'costs' && (
         <>
           <CostSummary costs={costs} />
-          {/* Category sub-tabs */}
+
+          {/* Flights */}
+          <div style={sectionHead}>
+            <span style={sectionTitle}>✈ Flights</span>
+            {user && <button style={smallAddBtn} onClick={() => setModal({ type: 'flights', data: null })}>+ Add Flight</button>}
+          </div>
+          {flights.length === 0
+            ? <div style={{ ...S.empty, padding: '1.25rem', textAlign: 'left', fontSize: '0.85rem' }}>No flights yet.{user ? ' Click "+ Add Flight" to get started.' : ''}</div>
+            : flights.map(f => <FlightCard key={f.id} flight={f} canEdit={!!user} onEdit={d => setModal({ type: 'flights', data: d })} onDelete={id => del(setFlights, api.deleteFlight, id, 'flight')} />)
+          }
+
+          {/* Accommodation */}
+          <div style={sectionHead}>
+            <span style={sectionTitle}>🏨 Accommodation</span>
+            {user && <button style={smallAddBtn} onClick={() => setModal({ type: 'accommodation', data: null })}>+ Add Accommodation</button>}
+          </div>
+          {accoms.length === 0
+            ? <div style={{ ...S.empty, padding: '1.25rem', textAlign: 'left', fontSize: '0.85rem' }}>No accommodation yet.{user ? ' Click "+ Add Accommodation" to get started.' : ''}</div>
+            : accoms.map(a => <AccomCard key={a.id} accom={a} canEdit={!!user} onEdit={d => setModal({ type: 'accommodation', data: d })} onDelete={id => del(setAccoms, api.deleteAccommodation, id, 'accommodation')} />)
+          }
+
+          {/* Cost items */}
+          <div style={sectionHead}>
+            <span style={sectionTitle}>💴 Cost Items</span>
+            {user && <button style={smallAddBtn} onClick={() => setModal({ type: 'costs', data: null })}>+ Add Cost</button>}
+          </div>
           {costs.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
-              <button
-                onClick={() => setCostFilter('all')}
-                style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: costFilter === 'all' ? 600 : 400, cursor: 'pointer', border: '1px solid', borderColor: costFilter === 'all' ? 'var(--ink)' : 'var(--border)', background: costFilter === 'all' ? 'var(--ink)' : 'white', color: costFilter === 'all' ? 'var(--paper)' : 'var(--ink-light)' }}
-              >
+              <button onClick={() => setCostFilter('all')} style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: costFilter === 'all' ? 600 : 400, cursor: 'pointer', border: '1px solid', borderColor: costFilter === 'all' ? 'var(--ink)' : 'var(--border)', background: costFilter === 'all' ? 'var(--ink)' : 'white', color: costFilter === 'all' ? 'var(--paper)' : 'var(--ink-light)' }}>
                 All ({costs.length})
               </button>
               {COST_CATEGORIES.filter(cat => costs.some(c => c.category === cat.value)).map(cat => {
                 const count = costs.filter(c => c.category === cat.value).length;
                 const active = costFilter === cat.value;
                 return (
-                  <button
-                    key={cat.value}
-                    onClick={() => setCostFilter(cat.value)}
-                    style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: active ? 600 : 400, cursor: 'pointer', border: '1px solid', borderColor: active ? 'var(--ink)' : 'var(--border)', background: active ? COST_CAT_COLORS[cat.value] : 'white', color: active ? 'var(--ink)' : 'var(--ink-light)' }}
-                  >
+                  <button key={cat.value} onClick={() => setCostFilter(cat.value)} style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: active ? 600 : 400, cursor: 'pointer', border: '1px solid', borderColor: active ? 'var(--ink)' : 'var(--border)', background: active ? COST_CAT_COLORS[cat.value] : 'white', color: active ? 'var(--ink)' : 'var(--ink-light)' }}>
                     {cat.label} ({count})
                   </button>
                 );
@@ -616,10 +612,19 @@ export default function LogisticsPage() {
             </div>
           )}
           {costs.length === 0
-            ? <div style={S.empty}>No costs tracked yet.{user ? ' Add flights, accommodation, activities…' : ' Sign in to add costs.'}</div>
+            ? <div style={{ ...S.empty, padding: '1.25rem', textAlign: 'left', fontSize: '0.85rem' }}>No costs tracked yet.{user ? ' Add flights, accommodation, activities…' : ' Sign in to add costs.'}</div>
             : costs
                 .filter(c => costFilter === 'all' || c.category === costFilter)
                 .map(c => <CostCard key={c.id} cost={c} canEdit={!!user} onEdit={d => setModal({ type: 'costs', data: d })} onDelete={id => del(setCosts, api.deleteCost, id, 'cost')} />)
+          }
+        </>
+      )}
+
+      {tab === 'links' && (
+        <>
+          {links.length === 0
+            ? <div style={S.empty}>No links yet.{user ? ' Add important links like Safe Traveler, visa info, emergency contacts…' : ' Sign in to add links.'}</div>
+            : links.map(l => <LinkCard key={l.id} link={l} canEdit={!!user} onEdit={d => setModal({ type: 'links', data: d })} onDelete={id => del(setLinks, api.deleteLink, id, 'link')} />)
           }
         </>
       )}

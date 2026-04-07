@@ -232,6 +232,9 @@ export default function TripPage() {
   const [showAddDay, setShowAddDay] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [planFilter, setPlanFilter] = useState('all');
+  const [dragPlaceId, setDragPlaceId] = useState(null);
+  const [dragOverDayId, setDragOverDayId] = useState(null);
 
   useEffect(() => {
     Promise.all([api.days(), api.cities(), api.places()])
@@ -261,6 +264,47 @@ export default function TripPage() {
   }
 
   const currentDay = days.find(d => d.id === activeDay);
+
+  const filteredPlanPlaces = allPlaces.filter(p => {
+    if (p.status === 'rejected') return false;
+    if (planFilter === 'all') return true;
+    return p.status === planFilter;
+  });
+
+  function handlePlanDragStart(e, place) {
+    setDragPlaceId(place.id);
+    e.dataTransfer.effectAllowed = 'copy';
+  }
+
+  function handlePlanDragEnd() {
+    setDragPlaceId(null);
+    setDragOverDayId(null);
+  }
+
+  function handleDayDragOver(e, dayId) {
+    if (!dragPlaceId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDragOverDayId(dayId);
+  }
+
+  function handleDayDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverDayId(null);
+    }
+  }
+
+  async function handleDayDrop(e, dayId) {
+    e.preventDefault();
+    if (!dragPlaceId) return;
+    setDragOverDayId(null);
+    const placeId = dragPlaceId;
+    setDragPlaceId(null);
+    try {
+      const item = await api.addItem(dayId, { place_id: placeId });
+      setDays(prev => prev.map(d => d.id === dayId ? { ...d, items: [...(d.items || []), item] } : d));
+    } catch {}
+  }
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr + 'T12:00:00');
@@ -293,7 +337,7 @@ export default function TripPage() {
 
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 60px - 100px - 360px)' }}>
         {/* Day sidebar */}
-        <div style={{ width: '220px', minWidth: '220px', background: 'var(--paper-warm)', borderRight: '1px solid var(--border)', padding: '1rem 0' }}>
+        <div style={{ width: '220px', minWidth: '220px', background: 'var(--paper-warm)', borderRight: '1px solid var(--border)', padding: '1rem 0', flexShrink: 0 }}>
           <div style={{ padding: '0 1rem 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-light)' }}>Days</span>
             {user && (
@@ -308,11 +352,14 @@ export default function TripPage() {
               <div
                 key={day.id}
                 onClick={() => setActiveDay(day.id)}
+                onDragOver={e => handleDayDragOver(e, day.id)}
+                onDragLeave={handleDayDragLeave}
+                onDrop={e => handleDayDrop(e, day.id)}
                 style={{
-                  padding: '10px 1rem', cursor: 'pointer',
-                  background: activeDay === day.id ? 'white' : 'transparent',
-                  borderLeft: activeDay === day.id ? '3px solid var(--red)' : '3px solid transparent',
-                  transition: 'all 0.15s'
+                  padding: '10px 1rem', cursor: dragPlaceId ? 'copy' : 'pointer',
+                  background: activeDay === day.id ? 'white' : dragOverDayId === day.id ? 'rgba(199,43,36,0.06)' : 'transparent',
+                  borderLeft: activeDay === day.id ? '3px solid var(--red)' : dragOverDayId === day.id ? '3px solid var(--red)' : '3px solid transparent',
+                  transition: 'all 0.15s', outline: dragOverDayId === day.id ? '2px dashed var(--red)' : 'none', outlineOffset: '-2px'
                 }}
               >
                 <div style={{ fontSize: '0.7rem', color: 'var(--red)', fontWeight: 500, letterSpacing: '0.06em' }}>DAY {idx + 1}</div>
@@ -401,6 +448,61 @@ export default function TripPage() {
               )}
             </>
           )}
+        </div>
+
+        {/* Planning sidebar */}
+        <div style={{ width: '260px', minWidth: '260px', borderLeft: '1px solid var(--border)', background: 'var(--paper-warm)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: '0.5rem' }}>Planning List</div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--ink-light)', marginBottom: '0.5rem', lineHeight: 1.4 }}>Drag a place onto a day to add it.</p>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+              {['all', 'considering', 'shortlisted', 'booked'].map(s => (
+                <button key={s} onClick={() => setPlanFilter(s)} style={{
+                  padding: '3px 9px', fontSize: '0.7rem', borderRadius: '999px', cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', border: '1px solid',
+                  borderColor: planFilter === s ? 'var(--ink)' : 'var(--border)',
+                  background: planFilter === s ? 'var(--ink)' : 'transparent',
+                  color: planFilter === s ? 'var(--paper)' : 'var(--ink-mid)'
+                }}>
+                  {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+            {filteredPlanPlaces.length === 0 ? (
+              <p style={{ padding: '1rem 0.5rem', fontSize: '0.8rem', color: 'var(--ink-light)', textAlign: 'center' }}>No places to show.</p>
+            ) : filteredPlanPlaces.map(place => (
+              <div
+                key={place.id}
+                draggable
+                onDragStart={e => handlePlanDragStart(e, place)}
+                onDragEnd={handlePlanDragEnd}
+                style={{
+                  padding: '8px 10px',
+                  background: dragPlaceId === place.id ? 'var(--paper-dark)' : 'white',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  marginBottom: '6px',
+                  cursor: 'grab',
+                  opacity: dragPlaceId === place.id ? 0.4 : 1,
+                  boxShadow: 'var(--shadow-soft)',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '13px', flexShrink: 0 }}>{CATEGORY_ICONS[place.category] || '📌'}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{place.name}</span>
+                </div>
+                {place.city_id && (
+                  <div style={{ fontSize: '0.69rem', color: 'var(--ink-light)', marginTop: '2px', paddingLeft: '19px' }}>
+                    {cities.find(c => c.id === place.city_id)?.name}
+                  </div>
+                )}
+                <div style={{ fontSize: '0.68rem', color: 'var(--ink-light)', marginTop: '2px', paddingLeft: '19px', textTransform: 'capitalize' }}>{place.status}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
