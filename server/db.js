@@ -158,6 +158,8 @@ async function initDb() {
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE`);
     await client.query(`UPDATE users SET username = LOWER(username)`);
+    await client.query(`ALTER TABLE costs DROP CONSTRAINT IF EXISTS costs_category_check`);
+    await client.query(`ALTER TABLE costs ADD CONSTRAINT costs_category_check CHECK (category IN ('flights','accommodation','food','activities','transport','shopping','travel_insurance','esim','other'))`);
     await client.query(`UPDATE users SET is_admin = TRUE WHERE username = 'barney'`);
     console.log('Database initialised');
   } finally {

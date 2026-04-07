@@ -365,57 +365,56 @@ function LinkCard({ link, onEdit, onDelete, canEdit }) {
 // ── Costs ─────────────────────────────────────────────────────────────────────
 
 const COST_CATEGORIES = [
-  { value: 'flights',       label: 'Flights' },
-  { value: 'accommodation', label: 'Accommodation' },
-  { value: 'food',          label: 'Food & Drink' },
-  { value: 'activities',    label: 'Activities' },
-  { value: 'transport',     label: 'Transport' },
-  { value: 'shopping',      label: 'Shopping' },
-  { value: 'other',         label: 'Other' },
+  { value: 'flights',            label: 'Flights' },
+  { value: 'accommodation',      label: 'Accommodation' },
+  { value: 'food',               label: 'Food & Drink' },
+  { value: 'activities',         label: 'Activities' },
+  { value: 'transport',          label: 'Transport' },
+  { value: 'shopping',           label: 'Shopping' },
+  { value: 'travel_insurance',   label: 'Travel Insurance' },
+  { value: 'esim',               label: 'eSIM' },
+  { value: 'other',              label: 'Other' },
 ];
 
 const COST_CAT_COLORS = {
-  flights: '#e8f0fe',
-  accommodation: '#e8f5e9',
-  food: '#fff3e0',
-  activities: '#f3e5f5',
-  transport: '#e0f7fa',
-  shopping: '#fce4ec',
-  other: 'var(--paper-warm)'
+  flights:          '#e8f0fe',
+  accommodation:    '#e8f5e9',
+  food:             '#fff3e0',
+  activities:       '#f3e5f5',
+  transport:        '#e0f7fa',
+  shopping:         '#fce4ec',
+  travel_insurance: '#fde8f0',
+  esim:             '#e8f9f5',
+  other:            'var(--paper-warm)'
 };
 
+function fmt$( amount) {
+  return `A$ ${parseFloat(amount).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function CostSummary({ costs }) {
-  const byCurrency = {};
-  costs.forEach(c => {
-    const cur = c.currency || 'GBP';
-    byCurrency[cur] = (byCurrency[cur] || 0) + parseFloat(c.amount);
-  });
+  if (costs.length === 0) return null;
+
+  const total = costs.reduce((sum, c) => sum + parseFloat(c.amount), 0);
 
   const byCat = {};
   costs.forEach(c => {
-    const cur = c.currency || 'GBP';
-    const key = `${c.category}|${cur}`;
-    byCat[key] = (byCat[key] || { cat: c.category, cur, total: 0 });
-    byCat[key].total += parseFloat(c.amount);
+    byCat[c.category] = (byCat[c.category] || 0) + parseFloat(c.amount);
   });
-
-  if (costs.length === 0) return null;
 
   return (
     <div style={S.summary}>
       <div>
-        <div style={S.summaryLabel}>Total tracked</div>
-        {Object.entries(byCurrency).map(([cur, total]) => (
-          <div key={cur} style={S.summaryTotal}>{cur} {total.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        ))}
+        <div style={S.summaryLabel}>Total</div>
+        <div style={S.summaryTotal}>{fmt$(total)}</div>
       </div>
       <div style={S.summaryBreakdown}>
-        {Object.values(byCat).map(({ cat, cur, total }) => {
+        {Object.entries(byCat).map(([cat, catTotal]) => {
           const label = COST_CATEGORIES.find(c => c.value === cat)?.label || cat;
           return (
-            <div key={`${cat}${cur}`} style={S.summaryPill}>
+            <div key={cat} style={S.summaryPill}>
               <span style={{ opacity: 0.6 }}>{label}</span>{' '}
-              <span style={{ fontWeight: 600 }}>{cur} {total.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span style={{ fontWeight: 600 }}>{fmt$(catTotal)}</span>
             </div>
           );
         })}
@@ -428,7 +427,6 @@ function CostModal({ cost, onSave, onClose }) {
   const [form, setForm] = useState({
     title: cost?.title || '',
     amount: cost?.amount || '',
-    currency: cost?.currency || 'AUD',
     category: cost?.category || 'other',
     date: cost?.date ? cost.date.slice(0, 10) : '',
     paid_by: cost?.paid_by || '',
@@ -441,7 +439,7 @@ function CostModal({ cost, onSave, onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const data = { ...form, amount: parseFloat(form.amount) };
+      const data = { ...form, amount: parseFloat(form.amount), currency: 'AUD' };
       onSave(cost ? await api.updateCost(cost.id, data) : await api.createCost(data));
       onClose();
     } catch (err) { alert(err.message); } finally { setSaving(false); }
@@ -449,28 +447,22 @@ function CostModal({ cost, onSave, onClose }) {
 
   return (
     <Modal title={cost ? 'Edit Cost' : 'Add Cost'} onClose={onClose} onSubmit={handleSubmit} saving={saving} saveLabel="Save Cost">
-      <div style={S.field}><label style={S.label}>Description *</label><input style={S.input} value={form.title} onChange={e => set('title', e.target.value)} required placeholder="Return flights LHR–KIX" /></div>
+      <div style={S.field}><label style={S.label}>Description *</label><input style={S.input} value={form.title} onChange={e => set('title', e.target.value)} required placeholder="Return flights SYD–KIX" /></div>
       <div style={S.row2}>
-        <div style={S.field}><label style={S.label}>Amount *</label><input style={S.input} type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required placeholder="0.00" /></div>
-        <div style={S.field}><label style={S.label}>Currency</label>
-          <select style={S.select} value={form.currency} onChange={e => set('currency', e.target.value)}>
-            <option value="AUD">AUD $</option>
-            <option value="JPY">JPY ¥</option>
-            <option value="GBP">GBP £</option>
-            <option value="EUR">EUR €</option>
-            <option value="USD">USD $</option>
-          </select>
+        <div style={S.field}>
+          <label style={S.label}>Amount (AUD) *</label>
+          <input style={S.input} type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required placeholder="0.00" />
         </div>
-      </div>
-      <div style={S.row2}>
         <div style={S.field}><label style={S.label}>Category</label>
           <select style={S.select} value={form.category} onChange={e => set('category', e.target.value)}>
             {COST_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
-        <div style={S.field}><label style={S.label}>Date</label><input style={S.input} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
       </div>
-      <div style={S.field}><label style={S.label}>Paid by</label><input style={S.input} value={form.paid_by} onChange={e => set('paid_by', e.target.value)} placeholder="Who paid this?" /></div>
+      <div style={S.row2}>
+        <div style={S.field}><label style={S.label}>Date</label><input style={S.input} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+        <div style={S.field}><label style={S.label}>Paid by</label><input style={S.input} value={form.paid_by} onChange={e => set('paid_by', e.target.value)} placeholder="Who paid this?" /></div>
+      </div>
       <div style={S.field}><label style={S.label}>Notes</label><input style={S.input} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Any extra details…" /></div>
     </Modal>
   );
@@ -478,14 +470,13 @@ function CostModal({ cost, onSave, onClose }) {
 
 function CostCard({ cost, onEdit, onDelete, canEdit }) {
   const catLabel = COST_CATEGORIES.find(c => c.value === cost.category)?.label || cost.category;
-  const amount = parseFloat(cost.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
-    <div style={{ ...S.card, borderLeft: `3px solid`, borderLeftColor: COST_CAT_COLORS[cost.category] || 'var(--border)' }}>
+    <div style={{ ...S.card, borderLeft: '3px solid', borderLeftColor: COST_CAT_COLORS[cost.category] || 'var(--border)' }}>
       <div style={S.cardTop}>
         <div>
           <div style={S.cardTitle}>{cost.title}</div>
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--ink)' }}>{cost.currency} {amount}</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--ink)' }}>{fmt$(cost.amount)}</span>
             <span style={{ ...S.badge('other'), background: COST_CAT_COLORS[cost.category] }}>{catLabel}</span>
           </div>
         </div>
@@ -523,6 +514,7 @@ const ADD_LABELS = {
 export default function LogisticsPage() {
   const { user } = useAuth();
   const [tab, setTab] = useState('flights');
+  const [costFilter, setCostFilter] = useState('all');
   const [flights, setFlights] = useState([]);
   const [accoms, setAccoms] = useState([]);
   const [links, setLinks] = useState([]);
@@ -599,9 +591,35 @@ export default function LogisticsPage() {
       {tab === 'costs' && (
         <>
           <CostSummary costs={costs} />
+          {/* Category sub-tabs */}
+          {costs.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
+              <button
+                onClick={() => setCostFilter('all')}
+                style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: costFilter === 'all' ? 600 : 400, cursor: 'pointer', border: '1px solid', borderColor: costFilter === 'all' ? 'var(--ink)' : 'var(--border)', background: costFilter === 'all' ? 'var(--ink)' : 'white', color: costFilter === 'all' ? 'var(--paper)' : 'var(--ink-light)' }}
+              >
+                All ({costs.length})
+              </button>
+              {COST_CATEGORIES.filter(cat => costs.some(c => c.category === cat.value)).map(cat => {
+                const count = costs.filter(c => c.category === cat.value).length;
+                const active = costFilter === cat.value;
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => setCostFilter(cat.value)}
+                    style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: active ? 600 : 400, cursor: 'pointer', border: '1px solid', borderColor: active ? 'var(--ink)' : 'var(--border)', background: active ? COST_CAT_COLORS[cat.value] : 'white', color: active ? 'var(--ink)' : 'var(--ink-light)' }}
+                  >
+                    {cat.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {costs.length === 0
             ? <div style={S.empty}>No costs tracked yet.{user ? ' Add flights, accommodation, activities…' : ' Sign in to add costs.'}</div>
-            : costs.map(c => <CostCard key={c.id} cost={c} canEdit={!!user} onEdit={d => setModal({ type: 'costs', data: d })} onDelete={id => del(setCosts, api.deleteCost, id, 'cost')} />)
+            : costs
+                .filter(c => costFilter === 'all' || c.category === costFilter)
+                .map(c => <CostCard key={c.id} cost={c} canEdit={!!user} onEdit={d => setModal({ type: 'costs', data: d })} onDelete={id => del(setCosts, api.deleteCost, id, 'cost')} />)
           }
         </>
       )}
