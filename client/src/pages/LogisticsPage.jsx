@@ -1,0 +1,495 @@
+import { useState, useEffect } from 'react';
+import { api } from '../lib/api';
+import { useAuth } from '../hooks/useAuth';
+
+const S = {
+  page: { maxWidth: 1100, margin: '0 auto', padding: '2rem 1.5rem' },
+  header: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--ink)' },
+  tabs: { display: 'flex', gap: 0, borderBottom: '2px solid var(--border)', marginBottom: '2rem' },
+  tab: (active) => ({
+    padding: '0.6rem 1.5rem',
+    fontFamily: 'var(--font-body)',
+    fontSize: '0.85rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    fontWeight: active ? 600 : 400,
+    color: active ? 'var(--red)' : 'var(--ink-light)',
+    borderBottom: active ? '2px solid var(--red)' : '2px solid transparent',
+    background: 'none',
+    border: 'none',
+    borderBottom: active ? '2px solid var(--red)' : '2px solid transparent',
+    marginBottom: '-2px',
+    cursor: 'pointer'
+  }),
+  addBtn: {
+    background: 'var(--red)',
+    color: 'white',
+    border: 'none',
+    padding: '0.5rem 1.2rem',
+    borderRadius: 'var(--radius)',
+    fontSize: '0.85rem',
+    letterSpacing: '0.06em',
+    cursor: 'pointer'
+  },
+  card: {
+    background: 'white',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-lg)',
+    padding: '1.25rem 1.5rem',
+    marginBottom: '1rem',
+    boxShadow: 'var(--shadow-soft)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem'
+  },
+  cardTop: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' },
+  route: { fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  arrow: { color: 'var(--red)', fontWeight: 300 },
+  meta: { display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.5rem', marginTop: '0.25rem' },
+  metaItem: { fontSize: '0.82rem', color: 'var(--ink-light)', display: 'flex', gap: '0.35rem', alignItems: 'center' },
+  metaLabel: { fontWeight: 600, color: 'var(--ink-mid)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.06em' },
+  badge: (color) => ({
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius)',
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    background: color === 'booked' ? '#e8f5e9' : color === 'cancelled' ? '#fdecea' : '#fff8e1',
+    color: color === 'booked' ? '#2e7d32' : color === 'cancelled' ? '#c0392b' : '#856404'
+  }),
+  actions: { display: 'flex', gap: '0.5rem', marginLeft: 'auto', flexShrink: 0 },
+  iconBtn: {
+    background: 'none',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: '4px 10px',
+    fontSize: '0.75rem',
+    color: 'var(--ink-light)',
+    cursor: 'pointer'
+  },
+  notes: { fontSize: '0.82rem', color: 'var(--ink-light)', fontStyle: 'italic', borderTop: '1px solid var(--border)', paddingTop: '0.5rem', marginTop: '0.25rem' },
+  addedBy: { fontSize: '0.75rem', color: 'var(--ink-light)', marginTop: '0.25rem' },
+  empty: { textAlign: 'center', padding: '4rem 2rem', color: 'var(--ink-light)', fontSize: '0.9rem' },
+
+  // Modal
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(26,18,8,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' },
+  modal: { background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: '1.5rem' },
+  field: { marginBottom: '1rem' },
+  label: { display: 'block', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-mid)', marginBottom: '0.4rem' },
+  input: { width: '100%', padding: '0.55rem 0.75rem', border: '1px solid var(--border-mid)', borderRadius: 'var(--radius)', fontSize: '0.9rem', fontFamily: 'var(--font-body)', background: 'white', color: 'var(--ink)' },
+  select: { width: '100%', padding: '0.55rem 0.75rem', border: '1px solid var(--border-mid)', borderRadius: 'var(--radius)', fontSize: '0.9rem', fontFamily: 'var(--font-body)', background: 'white', color: 'var(--ink)' },
+  row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' },
+  modalFooter: { display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' },
+  cancelBtn: { background: 'none', border: '1px solid var(--border-mid)', borderRadius: 'var(--radius)', padding: '0.5rem 1.2rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--ink-mid)' },
+  saveBtn: { background: 'var(--red)', color: 'white', border: 'none', borderRadius: 'var(--radius)', padding: '0.5rem 1.5rem', fontSize: '0.85rem', cursor: 'pointer' }
+};
+
+function fmt(dt) {
+  if (!dt) return null;
+  const d = new Date(dt);
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDate(d) {
+  if (!d) return null;
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ── Flights ──────────────────────────────────────────────────────────────────
+
+function FlightModal({ flight, onSave, onClose }) {
+  const [form, setForm] = useState({
+    airline: flight?.airline || '',
+    flight_number: flight?.flight_number || '',
+    from_location: flight?.from_location || '',
+    to_location: flight?.to_location || '',
+    departure_datetime: flight?.departure_datetime ? flight.departure_datetime.slice(0, 16) : '',
+    arrival_datetime: flight?.arrival_datetime ? flight.arrival_datetime.slice(0, 16) : '',
+    booking_reference: flight?.booking_reference || '',
+    price: flight?.price || '',
+    notes: flight?.notes || ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const data = { ...form };
+      if (!data.departure_datetime) delete data.departure_datetime;
+      if (!data.arrival_datetime) delete data.arrival_datetime;
+      if (flight) {
+        await onSave(await api.updateFlight(flight.id, data));
+      } else {
+        await onSave(await api.createFlight(data));
+      }
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={S.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={S.modal}>
+        <h2 style={S.modalTitle}>{flight ? 'Edit Flight' : 'Add Flight'}</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>From *</label>
+              <input style={S.input} value={form.from_location} onChange={e => set('from_location', e.target.value)} required placeholder="London Heathrow" />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>To *</label>
+              <input style={S.input} value={form.to_location} onChange={e => set('to_location', e.target.value)} required placeholder="Osaka Kansai" />
+            </div>
+          </div>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>Airline</label>
+              <input style={S.input} value={form.airline} onChange={e => set('airline', e.target.value)} placeholder="ANA, JAL…" />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Flight Number</label>
+              <input style={S.input} value={form.flight_number} onChange={e => set('flight_number', e.target.value)} placeholder="NH205" />
+            </div>
+          </div>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>Departure</label>
+              <input style={S.input} type="datetime-local" value={form.departure_datetime} onChange={e => set('departure_datetime', e.target.value)} />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Arrival</label>
+              <input style={S.input} type="datetime-local" value={form.arrival_datetime} onChange={e => set('arrival_datetime', e.target.value)} />
+            </div>
+          </div>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>Booking Reference</label>
+              <input style={S.input} value={form.booking_reference} onChange={e => set('booking_reference', e.target.value)} placeholder="ABC123" />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Price</label>
+              <input style={S.input} value={form.price} onChange={e => set('price', e.target.value)} placeholder="£450 total" />
+            </div>
+          </div>
+          <div style={S.field}>
+            <label style={S.label}>Notes</label>
+            <input style={S.input} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Luggage allowance, seat numbers…" />
+          </div>
+          <div style={S.modalFooter}>
+            <button type="button" style={S.cancelBtn} onClick={onClose}>Cancel</button>
+            <button type="submit" style={S.saveBtn} disabled={saving}>{saving ? 'Saving…' : 'Save Flight'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function FlightCard({ flight, onEdit, onDelete, canEdit }) {
+  return (
+    <div style={S.card}>
+      <div style={S.cardTop}>
+        <div style={S.route}>
+          <span>{flight.from_location}</span>
+          <span style={S.arrow}>→</span>
+          <span>{flight.to_location}</span>
+        </div>
+        {canEdit && (
+          <div style={S.actions}>
+            <button style={S.iconBtn} onClick={() => onEdit(flight)}>Edit</button>
+            <button style={{ ...S.iconBtn, color: 'var(--red)' }} onClick={() => onDelete(flight.id)}>Delete</button>
+          </div>
+        )}
+      </div>
+      <div style={S.meta}>
+        {flight.airline && <span style={S.metaItem}><span style={S.metaLabel}>Airline</span>{flight.airline}{flight.flight_number ? ` · ${flight.flight_number}` : ''}</span>}
+        {flight.departure_datetime && <span style={S.metaItem}><span style={S.metaLabel}>Departs</span>{fmt(flight.departure_datetime)}</span>}
+        {flight.arrival_datetime && <span style={S.metaItem}><span style={S.metaLabel}>Arrives</span>{fmt(flight.arrival_datetime)}</span>}
+        {flight.booking_reference && <span style={S.metaItem}><span style={S.metaLabel}>Ref</span><strong>{flight.booking_reference}</strong></span>}
+        {flight.price && <span style={S.metaItem}><span style={S.metaLabel}>Price</span>{flight.price}</span>}
+      </div>
+      {flight.notes && <div style={S.notes}>{flight.notes}</div>}
+      <div style={S.addedBy}>Added by {flight.added_by_name || 'unknown'}</div>
+    </div>
+  );
+}
+
+// ── Accommodation ─────────────────────────────────────────────────────────────
+
+function AccomModal({ accom, cities, onSave, onClose }) {
+  const [form, setForm] = useState({
+    city_id: accom?.city_id || '',
+    name: accom?.name || '',
+    address: accom?.address || '',
+    check_in: accom?.check_in ? accom.check_in.slice(0, 10) : '',
+    check_out: accom?.check_out ? accom.check_out.slice(0, 10) : '',
+    booking_reference: accom?.booking_reference || '',
+    price_per_night: accom?.price_per_night || '',
+    total_price: accom?.total_price || '',
+    url: accom?.url || '',
+    notes: accom?.notes || '',
+    status: accom?.status || 'considering'
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const data = { ...form, city_id: form.city_id || null };
+      if (accom) {
+        await onSave(await api.updateAccommodation(accom.id, data));
+      } else {
+        await onSave(await api.createAccommodation(data));
+      }
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={S.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={S.modal}>
+        <h2 style={S.modalTitle}>{accom ? 'Edit Accommodation' : 'Add Accommodation'}</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={S.field}>
+            <label style={S.label}>Name *</label>
+            <input style={S.input} value={form.name} onChange={e => set('name', e.target.value)} required placeholder="Hotel Monterey Osaka" />
+          </div>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>City</label>
+              <select style={S.select} value={form.city_id} onChange={e => set('city_id', e.target.value)}>
+                <option value="">— any —</option>
+                {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Status</label>
+              <select style={S.select} value={form.status} onChange={e => set('status', e.target.value)}>
+                <option value="considering">Considering</option>
+                <option value="booked">Booked</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div style={S.field}>
+            <label style={S.label}>Address</label>
+            <input style={S.input} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Full address" />
+          </div>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>Check-in</label>
+              <input style={S.input} type="date" value={form.check_in} onChange={e => set('check_in', e.target.value)} />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Check-out</label>
+              <input style={S.input} type="date" value={form.check_out} onChange={e => set('check_out', e.target.value)} />
+            </div>
+          </div>
+          <div style={S.row2}>
+            <div style={S.field}>
+              <label style={S.label}>Price / Night</label>
+              <input style={S.input} value={form.price_per_night} onChange={e => set('price_per_night', e.target.value)} placeholder="¥12,000" />
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Total Price</label>
+              <input style={S.input} value={form.total_price} onChange={e => set('total_price', e.target.value)} placeholder="¥60,000" />
+            </div>
+          </div>
+          <div style={S.field}>
+            <label style={S.label}>Booking Reference</label>
+            <input style={S.input} value={form.booking_reference} onChange={e => set('booking_reference', e.target.value)} placeholder="XYZ987654" />
+          </div>
+          <div style={S.field}>
+            <label style={S.label}>URL</label>
+            <input style={S.input} type="url" value={form.url} onChange={e => set('url', e.target.value)} placeholder="https://…" />
+          </div>
+          <div style={S.field}>
+            <label style={S.label}>Notes</label>
+            <input style={S.input} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Free breakfast, late checkout arranged…" />
+          </div>
+          <div style={S.modalFooter}>
+            <button type="button" style={S.cancelBtn} onClick={onClose}>Cancel</button>
+            <button type="submit" style={S.saveBtn} disabled={saving}>{saving ? 'Saving…' : 'Save Accommodation'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AccomCard({ accom, onEdit, onDelete, canEdit }) {
+  const nights = accom.check_in && accom.check_out
+    ? Math.round((new Date(accom.check_out) - new Date(accom.check_in)) / 86400000)
+    : null;
+
+  return (
+    <div style={S.card}>
+      <div style={S.cardTop}>
+        <div>
+          <div style={{ ...S.route, fontSize: '1.2rem' }}>
+            {accom.name}
+            {accom.city_name && <span style={{ fontSize: '0.85rem', fontWeight: 300, color: 'var(--ink-light)', marginLeft: '0.5rem' }}>— {accom.city_name}</span>}
+          </div>
+          <span style={S.badge(accom.status)}>{accom.status}</span>
+        </div>
+        {canEdit && (
+          <div style={S.actions}>
+            <button style={S.iconBtn} onClick={() => onEdit(accom)}>Edit</button>
+            <button style={{ ...S.iconBtn, color: 'var(--red)' }} onClick={() => onDelete(accom.id)}>Delete</button>
+          </div>
+        )}
+      </div>
+      <div style={S.meta}>
+        {accom.check_in && <span style={S.metaItem}><span style={S.metaLabel}>Check-in</span>{fmtDate(accom.check_in)}</span>}
+        {accom.check_out && <span style={S.metaItem}><span style={S.metaLabel}>Check-out</span>{fmtDate(accom.check_out)}</span>}
+        {nights !== null && <span style={S.metaItem}><span style={S.metaLabel}>Nights</span>{nights}</span>}
+        {accom.booking_reference && <span style={S.metaItem}><span style={S.metaLabel}>Ref</span><strong>{accom.booking_reference}</strong></span>}
+        {accom.price_per_night && <span style={S.metaItem}><span style={S.metaLabel}>Per night</span>{accom.price_per_night}</span>}
+        {accom.total_price && <span style={S.metaItem}><span style={S.metaLabel}>Total</span>{accom.total_price}</span>}
+      </div>
+      {accom.address && <div style={{ ...S.metaItem, marginTop: '0.1rem' }}><span style={S.metaLabel}>Address</span>{accom.address}</div>}
+      {accom.url && <div style={{ ...S.metaItem, marginTop: '0.1rem' }}><a href={accom.url} target="_blank" rel="noreferrer" style={{ color: 'var(--red)', fontSize: '0.82rem' }}>View booking ↗</a></div>}
+      {accom.notes && <div style={S.notes}>{accom.notes}</div>}
+      <div style={S.addedBy}>Added by {accom.added_by_name || 'unknown'}</div>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
+export default function LogisticsPage() {
+  const { user } = useAuth();
+  const [tab, setTab] = useState('flights');
+  const [flights, setFlights] = useState([]);
+  const [accoms, setAccoms] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null); // { type: 'flight'|'accom', data: null|obj }
+
+  useEffect(() => {
+    Promise.all([api.flights(), api.accommodations(), api.cities()])
+      .then(([f, a, c]) => { setFlights(f); setAccoms(a); setCities(c); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  function handleFlightSaved(saved) {
+    setFlights(prev => {
+      const idx = prev.findIndex(f => f.id === saved.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = saved; return next; }
+      return [...prev, saved].sort((a, b) => new Date(a.departure_datetime || 0) - new Date(b.departure_datetime || 0));
+    });
+  }
+
+  async function handleFlightDelete(id) {
+    if (!confirm('Delete this flight?')) return;
+    await api.deleteFlight(id);
+    setFlights(prev => prev.filter(f => f.id !== id));
+  }
+
+  function handleAccomSaved(saved) {
+    setAccoms(prev => {
+      const idx = prev.findIndex(a => a.id === saved.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = saved; return next; }
+      return [...prev, saved];
+    });
+  }
+
+  async function handleAccomDelete(id) {
+    if (!confirm('Delete this accommodation?')) return;
+    await api.deleteAccommodation(id);
+    setAccoms(prev => prev.filter(a => a.id !== id));
+  }
+
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--ink-light)' }}>Loading…</div>;
+
+  return (
+    <div style={S.page}>
+      <div style={S.header}>
+        <h1 style={S.title}>旅行 Logistics</h1>
+        {user && (
+          <button style={S.addBtn} onClick={() => setModal({ type: tab === 'flights' ? 'flight' : 'accom', data: null })}>
+            + Add {tab === 'flights' ? 'Flight' : 'Accommodation'}
+          </button>
+        )}
+      </div>
+
+      <div style={S.tabs}>
+        <button style={S.tab(tab === 'flights')} onClick={() => setTab('flights')}>
+          Flights {flights.length > 0 && `(${flights.length})`}
+        </button>
+        <button style={S.tab(tab === 'accommodation')} onClick={() => setTab('accommodation')}>
+          Accommodation {accoms.length > 0 && `(${accoms.length})`}
+        </button>
+      </div>
+
+      {tab === 'flights' && (
+        <>
+          {flights.length === 0
+            ? <div style={S.empty}>No flights added yet.{user ? ' Click "+ Add Flight" to get started.' : ' Sign in to add flights.'}</div>
+            : flights.map(f => (
+              <FlightCard
+                key={f.id}
+                flight={f}
+                canEdit={!!user}
+                onEdit={data => setModal({ type: 'flight', data })}
+                onDelete={handleFlightDelete}
+              />
+            ))
+          }
+        </>
+      )}
+
+      {tab === 'accommodation' && (
+        <>
+          {accoms.length === 0
+            ? <div style={S.empty}>No accommodation added yet.{user ? ' Click "+ Add Accommodation" to get started.' : ' Sign in to add accommodation.'}</div>
+            : accoms.map(a => (
+              <AccomCard
+                key={a.id}
+                accom={a}
+                canEdit={!!user}
+                onEdit={data => setModal({ type: 'accom', data })}
+                onDelete={handleAccomDelete}
+              />
+            ))
+          }
+        </>
+      )}
+
+      {modal?.type === 'flight' && (
+        <FlightModal
+          flight={modal.data}
+          onSave={handleFlightSaved}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {modal?.type === 'accom' && (
+        <AccomModal
+          accom={modal.data}
+          cities={cities}
+          onSave={handleAccomSaved}
+          onClose={() => setModal(null)}
+        />
+      )}
+    </div>
+  );
+}

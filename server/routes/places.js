@@ -13,11 +13,13 @@ router.get('/', optionalAuth, async (req, res) => {
         u.display_name AS added_by_name,
         u.avatar_color AS added_by_color,
         COALESCE(SUM(v.vote), 0) AS vote_score,
-        COUNT(v.id) AS vote_count,
-        MAX(CASE WHEN v.user_id = $1 THEN v.vote END) AS my_vote
+        COUNT(DISTINCT v.id) AS vote_count,
+        MAX(CASE WHEN v.user_id = $1 THEN v.vote END) AS my_vote,
+        COUNT(DISTINCT c.id) AS comment_count
       FROM places p
       LEFT JOIN users u ON p.added_by = u.id
       LEFT JOIN votes v ON v.place_id = p.id
+      LEFT JOIN comments c ON c.place_id = p.id
       WHERE 1=1
     `;
     const params = [userId];

@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import PlanPage from './pages/PlanPage';
 import TripPage from './pages/TripPage';
 import AdminPage from './pages/AdminPage';
+import LogisticsPage from './pages/LogisticsPage';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import './index.css';
 
@@ -18,6 +19,7 @@ function AppInner() {
         <Route path="/" element={<HomePage />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/trip" element={<TripPage />} />
+        <Route path="/logistics" element={<LogisticsPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

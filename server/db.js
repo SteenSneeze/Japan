@@ -84,6 +84,38 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS flights (
+        id SERIAL PRIMARY KEY,
+        airline VARCHAR(100),
+        flight_number VARCHAR(20),
+        from_location VARCHAR(200) NOT NULL,
+        to_location VARCHAR(200) NOT NULL,
+        departure_datetime TIMESTAMPTZ,
+        arrival_datetime TIMESTAMPTZ,
+        booking_reference VARCHAR(100),
+        price VARCHAR(50),
+        notes TEXT,
+        added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS accommodations (
+        id SERIAL PRIMARY KEY,
+        city_id INTEGER REFERENCES cities(id) ON DELETE SET NULL,
+        name VARCHAR(200) NOT NULL,
+        address TEXT,
+        check_in DATE,
+        check_out DATE,
+        booking_reference VARCHAR(100),
+        price_per_night VARCHAR(50),
+        total_price VARCHAR(50),
+        url TEXT,
+        notes TEXT,
+        status VARCHAR(20) DEFAULT 'considering' CHECK (status IN ('considering','booked','cancelled')),
+        added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
       INSERT INTO cities (name, lat, lng, order_index)
       SELECT * FROM (VALUES
         ('Osaka', 34.6937::DECIMAL, 135.5023::DECIMAL, 1),

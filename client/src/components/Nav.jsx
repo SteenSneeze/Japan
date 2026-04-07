@@ -108,6 +108,7 @@ export default function Nav() {
         <div style={styles.links}>
           <Link to="/plan" style={linkStyle('/plan')}>Planning</Link>
           <Link to="/trip" style={linkStyle('/trip')}>The Trip</Link>
+          <Link to="/logistics" style={linkStyle('/logistics')}>Logistics</Link>
         </div>
         <div style={styles.right}>
           {user ? (

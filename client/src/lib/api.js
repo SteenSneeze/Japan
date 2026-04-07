@@ -59,5 +59,17 @@ export const api = {
   deleteDay: (id) => req('DELETE', `/itinerary/days/${id}`),
   addItem: (dayId, data) => req('POST', `/itinerary/days/${dayId}/items`, data),
   updateItem: (id, data) => req('PUT', `/itinerary/items/${id}`, data),
-  deleteItem: (id) => req('DELETE', `/itinerary/items/${id}`)
+  deleteItem: (id) => req('DELETE', `/itinerary/items/${id}`),
+
+  // Flights
+  flights: () => req('GET', '/flights'),
+  createFlight: (data) => req('POST', '/flights', data),
+  updateFlight: (id, data) => req('PUT', `/flights/${id}`, data),
+  deleteFlight: (id) => req('DELETE', `/flights/${id}`),
+
+  // Accommodations
+  accommodations: () => req('GET', '/accommodations'),
+  createAccommodation: (data) => req('POST', '/accommodations', data),
+  updateAccommodation: (id, data) => req('PUT', `/accommodations/${id}`, data),
+  deleteAccommodation: (id) => req('DELETE', `/accommodations/${id}`)
 };

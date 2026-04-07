@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('./db'\\); require\\('./routes/flights'\\); require\\('./routes/accommodations'\\); console.log\\('OK'\\)\")",
+      "Bash(node --check M:/Japan/server/routes/flights.js)",
+      "Bash(node --check M:/Japan/server/routes/accommodations.js)",
+      "Bash(node --check M:/Japan/server/index.js)",
+      "Bash(node --check M:/Japan/server/db.js)"
+    ]
+  }
+}
