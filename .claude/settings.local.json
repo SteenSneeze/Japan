@@ -7,7 +7,8 @@
       "Bash(node --check M:/Japan/server/index.js)",
       "Bash(node --check M:/Japan/server/db.js)",
       "Bash(node --check M:/Japan/server/routes/links.js)",
-      "Bash(node --check M:/Japan/server/routes/costs.js)"
+      "Bash(node --check M:/Japan/server/routes/costs.js)",
+      "Bash(node --check M:/Japan/server/routes/auth.js)"
     ]
   }
 }

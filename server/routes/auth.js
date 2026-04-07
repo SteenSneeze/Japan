@@ -6,8 +6,19 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+async function auditLog(userId, action, details) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_log (user_id, action, details) VALUES ($1, $2, $3)`,
+      [userId, action, details || null]
+    );
+  } catch (err) {
+    console.error('Audit log error:', err.message);
+  }
+}
+
 router.post('/register', requireAuth, async (req, res) => {
-  if (req.user.id !== 1) return res.status(403).json({ error: 'Forbidden' });
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
   const { username, password, display_name, avatar_color } = req.body;
   if (!username || !password || !display_name) {
     return res.status(400).json({ error: 'username, password and display_name required' });
@@ -19,7 +30,9 @@ router.post('/register', requireAuth, async (req, res) => {
        VALUES ($1, $2, $3, $4, TRUE) RETURNING id, username, display_name, avatar_color, must_change_password`,
       [username.toLowerCase(), hash, display_name, avatar_color || '#C0392B']
     );
-    res.status(201).json(result.rows[0]);
+    const newUser = result.rows[0];
+    await auditLog(req.user.id, 'user_created', `Created account for ${display_name} (@${username.toLowerCase()})`);
+    res.status(201).json(newUser);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Username already taken' });
     console.error(err);
@@ -37,11 +50,15 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign(
-      { id: user.id, username: user.username, display_name: user.display_name, avatar_color: user.avatar_color },
+      { id: user.id, username: user.username, display_name: user.display_name, avatar_color: user.avatar_color, is_admin: user.is_admin },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-    res.json({ token, user: { id: user.id, username: user.username, display_name: user.display_name, avatar_color: user.avatar_color, must_change_password: user.must_change_password } });
+    await auditLog(user.id, 'login', `Logged in as @${user.username}`);
+    res.json({
+      token,
+      user: { id: user.id, username: user.username, display_name: user.display_name, avatar_color: user.avatar_color, must_change_password: user.must_change_password, is_admin: user.is_admin }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -49,7 +66,10 @@ router.post('/login', async (req, res) => {
 });
 
 router.get('/me', requireAuth, async (req, res) => {
-  const result = await pool.query('SELECT id, username, display_name, avatar_color, must_change_password FROM users WHERE id = $1', [req.user.id]);
+  const result = await pool.query(
+    'SELECT id, username, display_name, avatar_color, must_change_password, is_admin FROM users WHERE id = $1',
+    [req.user.id]
+  );
   if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
   res.json(result.rows[0]);
 });
@@ -65,6 +85,7 @@ router.post('/change-password', requireAuth, async (req, res) => {
     if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
     const hash = await bcrypt.hash(new_password, 12);
     await pool.query('UPDATE users SET password_hash = $1, must_change_password = FALSE WHERE id = $2', [hash, req.user.id]);
+    await auditLog(req.user.id, 'password_changed', `@${req.user.username} changed their password`);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
@@ -74,9 +95,26 @@ router.post('/change-password', requireAuth, async (req, res) => {
 
 router.get('/users', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, username, display_name, avatar_color FROM users ORDER BY display_name');
+    const result = await pool.query('SELECT id, username, display_name, avatar_color, is_admin FROM users ORDER BY display_name');
     res.json(result.rows);
   } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/audit-log', requireAuth, async (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const result = await pool.query(
+      `SELECT al.*, u.display_name AS user_name, u.avatar_color AS user_color, u.username
+       FROM audit_log al
+       LEFT JOIN users u ON al.user_id = u.id
+       ORDER BY al.created_at DESC
+       LIMIT 200`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -428,7 +428,7 @@ function CostModal({ cost, onSave, onClose }) {
   const [form, setForm] = useState({
     title: cost?.title || '',
     amount: cost?.amount || '',
-    currency: cost?.currency || 'GBP',
+    currency: cost?.currency || 'AUD',
     category: cost?.category || 'other',
     date: cost?.date ? cost.date.slice(0, 10) : '',
     paid_by: cost?.paid_by || '',
@@ -454,8 +454,9 @@ function CostModal({ cost, onSave, onClose }) {
         <div style={S.field}><label style={S.label}>Amount *</label><input style={S.input} type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required placeholder="0.00" /></div>
         <div style={S.field}><label style={S.label}>Currency</label>
           <select style={S.select} value={form.currency} onChange={e => set('currency', e.target.value)}>
-            <option value="GBP">GBP £</option>
+            <option value="AUD">AUD $</option>
             <option value="JPY">JPY ¥</option>
+            <option value="GBP">GBP £</option>
             <option value="EUR">EUR €</option>
             <option value="USD">USD $</option>
           </select>

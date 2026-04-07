@@ -32,6 +32,7 @@ export const api = {
   users: () => req('GET', '/auth/users'),
   register: (data) => req('POST', '/auth/register', data),
   changePassword: (current_password, new_password) => req('POST', '/auth/change-password', { current_password, new_password }),
+  auditLog: () => req('GET', '/auth/audit-log'),
 
   // Cities
   cities: () => req('GET', '/cities'),

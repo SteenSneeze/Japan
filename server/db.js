@@ -116,6 +116,14 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        action VARCHAR(100) NOT NULL,
+        details TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
       CREATE TABLE IF NOT EXISTS links (
         id SERIAL PRIMARY KEY,
         title VARCHAR(200) NOT NULL,
@@ -130,7 +138,7 @@ async function initDb() {
         id SERIAL PRIMARY KEY,
         title VARCHAR(200) NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
-        currency VARCHAR(10) DEFAULT 'GBP',
+        currency VARCHAR(10) DEFAULT 'AUD',
         category VARCHAR(50) DEFAULT 'other' CHECK (category IN ('flights','accommodation','food','activities','transport','shopping','other')),
         date DATE,
         paid_by VARCHAR(100),
@@ -148,6 +156,8 @@ async function initDb() {
       WHERE NOT EXISTS (SELECT 1 FROM cities);
     `);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE`);
+    await client.query(`UPDATE users SET is_admin = TRUE WHERE username = 'barney'`);
     console.log('Database initialised');
   } finally {
     client.release();
