@@ -157,6 +157,7 @@ async function initDb() {
     `);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE`);
+    await client.query(`UPDATE users SET username = LOWER(username)`);
     await client.query(`UPDATE users SET is_admin = TRUE WHERE username = 'barney'`);
     console.log('Database initialised');
   } finally {
