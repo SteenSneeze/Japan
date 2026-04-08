@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 
-const overlay = { position: 'fixed', inset: 0, background: 'rgba(26,18,8,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
-const modal = { background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '480px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-mid)', boxShadow: '0 20px 60px rgba(26,18,8,0.3)', position: 'relative' };
+const overlay = { position: 'fixed', inset: 0, background: 'rgba(15,14,42,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
+const modal = { background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '480px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-mid)', boxShadow: '0 20px 60px rgba(15,14,42,0.28)', position: 'relative' };
 const lbl = { display: 'block', fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-mid)', marginBottom: '5px', marginTop: '14px' };
 
 const CATEGORIES = [

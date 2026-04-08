@@ -67,7 +67,7 @@ const S = {
   empty: { textAlign: 'center', padding: '4rem 2rem', color: 'var(--ink-light)', fontSize: '0.9rem' },
 
   // Modal
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(26,18,8,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(15,14,42,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' },
   modal: { background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
   modalTitle: { fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: '1.5rem' },
   field: { marginBottom: '1rem' },
@@ -80,11 +80,11 @@ const S = {
   saveBtn: { background: 'var(--red)', color: 'white', border: 'none', borderRadius: 'var(--radius)', padding: '0.5rem 1.5rem', fontSize: '0.85rem', cursor: 'pointer' },
 
   // Cost summary
-  summary: { background: 'var(--ink)', color: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '1.25rem 1.5rem', marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' },
-  summaryTotal: { fontFamily: 'var(--font-display)', fontSize: '1.6rem' },
-  summaryLabel: { fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(245,240,232,0.6)', marginBottom: '2px' },
+  summary: { background: 'var(--grad-hero)', color: 'white', borderRadius: 'var(--radius-lg)', padding: '1.5rem 1.75rem', marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', boxShadow: 'var(--shadow-card)' },
+  summaryTotal: { fontFamily: 'var(--font-display)', fontSize: '1.8rem' },
+  summaryLabel: { fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: '2px' },
   summaryBreakdown: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.5rem', flex: 1 },
-  summaryPill: { fontSize: '0.8rem', color: 'var(--paper-dark)' }
+  summaryPill: { fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)' }
 };
 
 function fmt(dt) {
@@ -631,13 +631,22 @@ export default function LogisticsPage() {
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--ink-light)' }}>Loading…</div>;
 
   return (
-    <div style={S.page}>
-      <div style={S.header}>
-        <h1 style={S.title}>費用 Costs</h1>
-        {tab === 'links' && user && (
-          <button style={S.addBtn} onClick={() => setModal({ type: 'links', data: null })}>+ Add Link</button>
-        )}
+    <div>
+      {/* Page header banner */}
+      <div style={{ background: 'var(--grad-hero)', padding: '3rem 2rem 2.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-display)', fontSize: '8rem', color: 'rgba(255,255,255,0.06)', lineHeight: 1, userSelect: 'none' }}>費用</div>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'var(--grad-accent)' }} />
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-display)', color: 'white', fontSize: '2.5rem', marginBottom: '0.4rem' }}>Costs</h1>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>Flights, accommodation and shared expenses.</p>
+          </div>
+          {tab === 'links' && user && (
+            <button style={{ ...S.addBtn, boxShadow: '0 4px 16px rgba(232,25,125,0.4)' }} onClick={() => setModal({ type: 'links', data: null })}>+ Add Link</button>
+          )}
+        </div>
       </div>
+    <div style={S.page}>
 
       <div style={S.tabs}>
         {TABS.map(t => (
@@ -714,6 +723,7 @@ export default function LogisticsPage() {
       {modal?.type === 'accommodation' && <AccomModal accom={modal.data} cities={cities} onSave={s => upsert(setAccoms, s)} onClose={() => setModal(null)} />}
       {modal?.type === 'links' && <LinkModal link={modal.data} onSave={s => upsert(setLinks, s)} onClose={() => setModal(null)} />}
       {modal?.type === 'costs' && <CostModal cost={modal.data} onSave={s => upsert(setCosts, s)} onClose={() => setModal(null)} />}
+    </div>
     </div>
   );
 }

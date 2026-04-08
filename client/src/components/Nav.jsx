@@ -5,47 +5,52 @@ import LoginModal from './LoginModal';
 
 const styles = {
   nav: {
-    background: 'var(--ink)',
+    background: 'var(--grad-nav)',
     borderBottom: '3px solid var(--red)',
     padding: '0 2rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: '60px',
+    height: '62px',
     position: 'sticky',
     top: 0,
-    zIndex: 100
+    zIndex: 100,
+    boxShadow: '0 4px 24px rgba(15,14,42,0.35)'
   },
   logo: {
     fontFamily: 'var(--font-display)',
-    fontSize: '1.2rem',
-    color: 'var(--paper)',
-    letterSpacing: '0.05em',
+    fontSize: '1.25rem',
+    color: 'white',
+    letterSpacing: '0.06em',
     display: 'flex',
     alignItems: 'center',
     gap: '10px'
   },
   kanji: {
     color: 'var(--red)',
-    fontSize: '1.4rem'
+    fontSize: '1.5rem',
+    filter: 'drop-shadow(0 0 8px rgba(232,25,125,0.5))'
   },
   links: {
     display: 'flex',
-    gap: '2rem',
+    gap: '0.25rem',
     alignItems: 'center'
   },
   link: {
-    color: 'var(--paper-dark)',
+    color: 'rgba(255,255,255,0.65)',
     fontFamily: 'var(--font-body)',
-    fontSize: '0.85rem',
-    fontWeight: 400,
+    fontSize: '0.82rem',
+    fontWeight: 500,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
     transition: 'color 0.15s',
-    textDecoration: 'none'
+    textDecoration: 'none',
+    padding: '6px 14px',
+    borderRadius: 'var(--radius)'
   },
   linkActive: {
-    color: 'var(--red)'
+    color: 'white',
+    background: 'rgba(232,25,125,0.2)'
   },
   right: {
     display: 'flex',
@@ -53,38 +58,43 @@ const styles = {
     gap: '1rem'
   },
   avatar: {
-    width: '32px',
-    height: '32px',
+    width: '34px',
+    height: '34px',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontWeight: 500,
+    fontWeight: 600,
     fontSize: '12px',
     color: 'white',
-    cursor: 'default'
+    cursor: 'default',
+    boxShadow: '0 0 0 2px rgba(255,255,255,0.2)'
   },
   loginBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(245,240,232,0.3)',
-    color: 'var(--paper)',
-    padding: '6px 14px',
+    background: 'var(--grad-accent)',
+    border: 'none',
+    color: 'white',
+    padding: '7px 18px',
     borderRadius: 'var(--radius)',
     fontSize: '0.8rem',
-    letterSpacing: '0.06em',
+    fontWeight: 600,
+    letterSpacing: '0.05em',
     cursor: 'pointer',
-    transition: 'all 0.15s',
-    fontFamily: 'var(--font-body)'
+    transition: 'opacity 0.15s, transform 0.15s',
+    fontFamily: 'var(--font-body)',
+    boxShadow: '0 2px 12px rgba(232,25,125,0.4)'
   },
   logoutBtn: {
     background: 'transparent',
-    border: 'none',
-    color: 'var(--paper-dark)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: '0.75rem',
     cursor: 'pointer',
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    fontFamily: 'var(--font-body)'
+    fontFamily: 'var(--font-body)',
+    padding: '5px 12px',
+    borderRadius: 'var(--radius)'
   }
 };
 
@@ -95,7 +105,8 @@ export default function Nav() {
 
   const linkStyle = (path) => ({
     ...styles.link,
-    ...(loc.pathname.startsWith(path) ? styles.linkActive : {})
+    ...(loc.pathname.startsWith(path) ? styles.linkActive : {}),
+    display: 'inline-block'
   });
 
   return (

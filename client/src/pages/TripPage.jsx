@@ -25,8 +25,8 @@ function AddDayModal({ onClose, onAdd, cities }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,18,8,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '380px', maxWidth: '95vw', position: 'relative', boxShadow: '0 20px 60px rgba(26,18,8,0.3)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,14,42,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '380px', maxWidth: '95vw', position: 'relative', boxShadow: '0 20px 60px rgba(15,14,42,0.28)' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: 'var(--ink-light)' }}>✕</button>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', marginBottom: '1.5rem' }}>Add a day</h2>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '12px' }}>
@@ -82,8 +82,8 @@ function AddItemModal({ onClose, onAdd, day, places }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,18,8,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '420px', maxWidth: '95vw', position: 'relative', boxShadow: '0 20px 60px rgba(26,18,8,0.3)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,14,42,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: 'var(--paper)', borderRadius: 'var(--radius-lg)', padding: '2rem', width: '420px', maxWidth: '95vw', position: 'relative', boxShadow: '0 20px 60px rgba(15,14,42,0.28)' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: 'var(--ink-light)' }}>✕</button>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', marginBottom: '0.5rem' }}>Add to day</h2>
         <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '1.25rem' }}>
@@ -320,12 +320,13 @@ export default function TripPage() {
   return (
     <div style={{ minHeight: '100vh' }}>
       {/* Header */}
-      <div style={{ background: 'var(--ink)', padding: '3rem 2rem 2.5rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-display)', fontSize: '8rem', color: 'rgba(255,255,255,0.04)', lineHeight: 1, userSelect: 'none' }}>旅行</div>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--paper)', fontSize: '2.5rem', marginBottom: '0.5rem' }}>
+      <div style={{ background: 'var(--grad-hero)', padding: '3rem 2rem 2.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-display)', fontSize: '8rem', color: 'rgba(255,255,255,0.06)', lineHeight: 1, userSelect: 'none' }}>旅行</div>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'var(--grad-accent)' }} />
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'white', fontSize: '2.5rem', marginBottom: '0.5rem' }}>
           The Trip
         </h1>
-        <p style={{ color: 'var(--paper-dark)', fontSize: '0.9rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
           Day-by-day itinerary. Add days then fill them with places from the planning list.
         </p>
       </div>

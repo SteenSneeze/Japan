@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 const overlay = {
-  position: 'fixed', inset: 0, background: 'rgba(26,18,8,0.7)',
+  position: 'fixed', inset: 0, background: 'rgba(15,14,42,0.72)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
 };
 const modal = {
   background: 'var(--paper)', borderRadius: 'var(--radius-lg)',
   padding: '2.5rem', width: '360px', maxWidth: '90vw',
   border: '1px solid var(--border-mid)',
-  boxShadow: '0 20px 60px rgba(26,18,8,0.3)'
+  boxShadow: '0 20px 60px rgba(15,14,42,0.28)'
 };
 const title = {
   fontFamily: 'var(--font-display)', fontSize: '1.6rem',
