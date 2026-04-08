@@ -15,7 +15,7 @@ const CATEGORIES = [
 
 const COLUMNS = [
   { value: 'considering', label: 'Considering', color: 'var(--ink-light)' },
-  { value: 'shortlisted', label: 'Shortlisted', color: 'var(--gold)' },
+  { value: 'going', label: 'Going', color: 'var(--gold)' },
   { value: 'booked',      label: 'Booked',      color: '#3B6D11' },
   { value: 'rejected',    label: 'Rejected',    color: 'var(--red)' }
 ];

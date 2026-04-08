@@ -20,14 +20,14 @@ const CATEGORY_COLORS = {
 
 const STATUS_LABELS = {
   considering: 'Considering',
-  shortlisted: 'Shortlisted',
+  going: 'Going',
   booked: 'Booked',
   rejected: 'Rejected'
 };
 
 const STATUS_COLORS = {
   considering: '#888780',
-  shortlisted: '#BA7517',
+  going: '#BA7517',
   booked: '#3B6D11',
   rejected: '#A32D2D'
 };

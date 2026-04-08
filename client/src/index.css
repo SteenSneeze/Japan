@@ -102,3 +102,24 @@ input:focus, select:focus, textarea:focus {
 /* Leaflet */
 .leaflet-container { background: var(--paper-warm); font-family: var(--font-body); }
 .leaflet-popup-content-wrapper { border-radius: var(--radius); box-shadow: var(--shadow-card); }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  /* Prevent iOS font-size zoom on inputs */
+  input, select, textarea { font-size: 16px !important; }
+
+  /* Page headers */
+  .page-hero { padding: 1.75rem 1rem 1.5rem !important; }
+  .page-hero h1 { font-size: 1.8rem !important; }
+  .page-hero .hero-kanji { display: none !important; }
+
+  /* Cards stack full width */
+  .card-grid-2 { grid-template-columns: 1fr !important; }
+
+  /* Modal full-screen on small phones */
+  .modal-inner { width: 95vw !important; max-height: 90vh; overflow-y: auto; }
+
+  /* Tabs scroll */
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+}

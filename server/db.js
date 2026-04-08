@@ -185,6 +185,9 @@ async function initDb() {
     await client.query(`ALTER TABLE costs DROP CONSTRAINT IF EXISTS costs_category_check`);
     await client.query(`ALTER TABLE costs ADD CONSTRAINT costs_category_check CHECK (category IN ('flights','accommodation','food','activities','transport','shopping','travel_insurance','esim','other'))`);
     await client.query(`UPDATE users SET is_admin = TRUE WHERE username = 'barney'`);
+    await client.query(`UPDATE places SET status = 'going' WHERE status = 'shortlisted'`);
+    await client.query(`ALTER TABLE places DROP CONSTRAINT IF EXISTS places_status_check`);
+    await client.query(`ALTER TABLE places ADD CONSTRAINT places_status_check CHECK (status IN ('considering','going','booked','rejected'))`);
     console.log('Database initialised');
   } finally {
     client.release();

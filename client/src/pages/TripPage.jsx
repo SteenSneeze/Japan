@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
+import { useMobile } from '../hooks/useMobile';
 
 // ── Calendar constants ──────────────────────────────────────────────────────
 const START_HOUR     = 7;
@@ -22,7 +23,7 @@ const CATEGORY_COLORS = {
 };
 const STATUS_COLORS = {
   considering: { color: '#856404', bg: '#fff8e1' },
-  shortlisted: { color: '#1a56db', bg: '#e8f0fe' },
+  going: { color: '#1a56db', bg: '#e8f0fe' },
   booked:      { color: '#2e7d32', bg: '#e8f5e9' },
 };
 
@@ -245,6 +246,8 @@ function TripMap({ days }) {
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function TripPage() {
   const { user } = useAuth();
+  const isMobile = useMobile();
+  const [mobileTab, setMobileTab] = useState('calendar'); // 'days' | 'calendar' | 'plan'
   const [days, setDays] = useState([]);
   const [cities, setCities] = useState([]);
   const [allPlaces, setAllPlaces] = useState([]);
@@ -428,10 +431,10 @@ export default function TripPage() {
         <TripMap days={days} />
       </div>
 
-      <div style={{ display: 'flex', height: 'calc(100vh - 60px - 106px - 300px)', minHeight: '600px' }}>
+      <div style={{ display: 'flex', height: isMobile ? 'auto' : 'calc(100vh - 62px - 106px - 300px)', minHeight: isMobile ? 0 : '600px', flexDirection: isMobile ? 'column' : 'row' }}>
 
         {/* ── Day sidebar ── */}
-        <div style={{ width: '200px', minWidth: '200px', background: 'var(--paper-warm)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '100%' : '200px', minWidth: isMobile ? 0 : '200px', background: 'var(--paper-warm)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', display: isMobile && mobileTab !== 'days' ? 'none' : 'flex', flexDirection: 'column', flexShrink: 0, minHeight: isMobile ? '100dvh' : 0 }}>
           <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-light)' }}>Days</span>
             {user && <button onClick={() => setShowAddDay(true)} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--ink)', color: 'white', border: 'none', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>}
@@ -471,7 +474,7 @@ export default function TripPage() {
         </div>
 
         {/* ── Day detail ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minWidth: 0 }}>
+        <div style={{ flex: 1, display: isMobile && mobileTab !== 'calendar' ? 'none' : 'flex', flexDirection: 'column', overflowY: 'auto', minWidth: 0, minHeight: isMobile ? '100dvh' : 0 }}>
           {!currentDay ? (
             <div style={{ textAlign: 'center', paddingTop: '4rem' }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--paper-dark)', marginBottom: '1rem' }}>旅</div>
@@ -669,12 +672,12 @@ export default function TripPage() {
         </div>
 
         {/* ── Planning sidebar ── */}
-        <div style={{ width: '240px', minWidth: '240px', borderLeft: '1px solid var(--border)', background: 'var(--paper-warm)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '100%' : '240px', minWidth: isMobile ? 0 : '240px', borderLeft: isMobile ? 'none' : '1px solid var(--border)', borderTop: isMobile ? '1px solid var(--border)' : 'none', background: 'var(--paper-warm)', display: isMobile && mobileTab !== 'plan' ? 'none' : 'flex', flexDirection: 'column', flexShrink: 0, minHeight: isMobile ? '100dvh' : 0 }}>
           <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border)' }}>
             <div style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: '0.4rem' }}>Planning List</div>
             <p style={{ fontSize: '0.7rem', color: 'var(--ink-light)', marginBottom: '0.5rem', lineHeight: 1.4 }}>Drag onto the calendar to time-block. Default duration: 1 hr.</p>
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {['all','considering','shortlisted','booked'].map(s => (
+              {['all','considering','going','booked'].map(s => (
                 <button key={s} onClick={() => setPlanFilter(s)} style={{
                   padding: '3px 8px', fontSize: '0.68rem', borderRadius: '999px', cursor: 'pointer', fontFamily: 'var(--font-body)', border: '1px solid',
                   borderColor: planFilter === s ? 'var(--ink)' : 'var(--border)',
@@ -718,6 +721,28 @@ export default function TripPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile bottom tab bar */}
+      {isMobile && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--grad-nav)', borderTop: '2px solid var(--red)', display: 'flex', zIndex: 150, boxShadow: '0 -4px 20px rgba(15,14,42,0.3)' }}>
+          {[
+            { id: 'days',     label: 'Days',    icon: '🗓' },
+            { id: 'calendar', label: 'Calendar', icon: '📅' },
+            { id: 'plan',     label: 'Places',  icon: '🗺' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setMobileTab(tab.id)} style={{
+              flex: 1, padding: '10px 4px 8px', background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+              color: mobileTab === tab.id ? 'var(--red)' : 'rgba(255,255,255,0.5)',
+              borderTop: mobileTab === tab.id ? '2px solid var(--red)' : '2px solid transparent',
+              marginTop: '-2px', transition: 'color 0.15s'
+            }}>
+              <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{tab.icon}</span>
+              <span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {showAddDay && <AddDayModal onClose={() => setShowAddDay(false)} onAdd={handleAddDay} cities={cities} />}
       {showAddItem && selectedDay && (
