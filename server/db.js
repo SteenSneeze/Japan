@@ -191,4 +191,15 @@ async function initDb() {
   }
 }
 
-module.exports = { pool, initDb };
+async function auditLog(userId, action, details) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_log (user_id, action, details) VALUES ($1, $2, $3)`,
+      [userId, action, details || null]
+    );
+  } catch (err) {
+    console.error('Audit log error:', err.message);
+  }
+}
+
+module.exports = { pool, initDb, auditLog };

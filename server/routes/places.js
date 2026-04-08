@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../db');
+const { pool, auditLog } = require('../db');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -45,6 +45,7 @@ router.post('/', requireAuth, async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [city_id, category, name, description, address, lat, lng, price_range, url, image_url, req.user.id]
     );
+    await auditLog(req.user.id, 'place_added', `Added place "${name}" (${category})`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -54,6 +55,7 @@ router.post('/', requireAuth, async (req, res) => {
 router.put('/:id', requireAuth, async (req, res) => {
   const { name, description, address, lat, lng, price_range, url, image_url, status, city_id, category } = req.body;
   try {
+    const existing = await pool.query('SELECT name, status FROM places WHERE id=$1', [req.params.id]);
     const result = await pool.query(
       `UPDATE places SET
         name=COALESCE($1,name), description=COALESCE($2,description), address=COALESCE($3,address),
@@ -64,6 +66,13 @@ router.put('/:id', requireAuth, async (req, res) => {
       [name, description, address, lat, lng, price_range, url, image_url, status, city_id, category, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    const placeName = existing.rows[0]?.name || name;
+    const prevStatus = existing.rows[0]?.status;
+    if (status && status !== prevStatus) {
+      await auditLog(req.user.id, 'place_status_changed', `Moved "${placeName}" to ${status}`);
+    } else {
+      await auditLog(req.user.id, 'place_updated', `Updated place "${placeName}"`);
+    }
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -72,7 +81,10 @@ router.put('/:id', requireAuth, async (req, res) => {
 
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
+    const existing = await pool.query('SELECT name FROM places WHERE id=$1', [req.params.id]);
     await pool.query('DELETE FROM places WHERE id=$1', [req.params.id]);
+    const placeName = existing.rows[0]?.name || `#${req.params.id}`;
+    await auditLog(req.user.id, 'place_deleted', `Deleted place "${placeName}"`);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
