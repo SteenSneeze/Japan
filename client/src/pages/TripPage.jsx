@@ -308,7 +308,12 @@ export default function TripPage() {
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr + 'T12:00:00');
-    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+    return {
+      weekday: d.toLocaleDateString('en-AU', { weekday: 'short' }),
+      day:     d.toLocaleDateString('en-AU', { day: 'numeric' }),
+      month:   d.toLocaleDateString('en-AU', { month: 'short' }),
+      full:    d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+    };
   };
 
   if (loading) return (
@@ -363,11 +368,21 @@ export default function TripPage() {
                   transition: 'all 0.15s', outline: dragOverDayId === day.id ? '2px dashed var(--red)' : 'none', outlineOffset: '-2px'
                 }}
               >
-                <div style={{ fontSize: '0.7rem', color: 'var(--red)', fontWeight: 500, letterSpacing: '0.06em' }}>DAY {idx + 1}</div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--ink)', marginTop: '1px' }}>{formatDate(day.date)}</div>
-                {day.city_name && <div style={{ fontSize: '0.72rem', color: 'var(--ink-light)', marginTop: '1px' }}>{day.city_name}</div>}
-                {day.label && <div style={{ fontSize: '0.72rem', color: 'var(--ink-mid)', fontStyle: 'italic', marginTop: '1px' }}>{day.label}</div>}
-                <div style={{ fontSize: '0.7rem', color: 'var(--ink-light)', marginTop: '3px' }}>{(day.items || []).length} items</div>
+                {(() => { const f = formatDate(day.date); return (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--red)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Day {idx + 1}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--ink-light)', fontWeight: 400 }}>{f.weekday}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '2px' }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--ink)', lineHeight: 1 }}>{f.day}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--ink-mid)' }}>{f.month}</span>
+                    </div>
+                    {day.city_name && <div style={{ fontSize: '0.7rem', color: 'var(--ink-light)', marginTop: '2px' }}>{day.city_name}</div>}
+                    {day.label && <div style={{ fontSize: '0.7rem', color: 'var(--red)', fontStyle: 'italic', marginTop: '1px', opacity: 0.8 }}>{day.label}</div>}
+                    <div style={{ fontSize: '0.65rem', color: 'var(--ink-light)', marginTop: '4px' }}>{(day.items || []).length} item{(day.items || []).length !== 1 ? 's' : ''}</div>
+                  </>
+                ); })()}
               </div>
             ))
           )}
