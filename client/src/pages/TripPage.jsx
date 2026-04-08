@@ -411,7 +411,7 @@ export default function TripPage() {
                     {currentDay.city_name && ` · ${currentDay.city_name}`}
                   </div>
                   <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--ink)', lineHeight: 1.1 }}>
-                    {new Date(currentDay.date + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    {new Date(String(currentDay.date).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                   </h2>
                   {currentDay.label && <p style={{ color: 'var(--ink-light)', fontStyle: 'italic', marginTop: '4px' }}>{currentDay.label}</p>}
                 </div>
