@@ -6,6 +6,12 @@ const CATEGORY_ICONS = {
   accommodation: '🏨', food: '🍜', attraction: '⛩', transport: '🚅', other: '📌'
 };
 
+const STATUS_COLORS = {
+  considering: { color: '#856404', bg: '#fff8e1' },
+  shortlisted: { color: '#1a56db', bg: '#e8f0fe' },
+  booked:      { color: '#2e7d32', bg: '#e8f5e9' },
+};
+
 function AddDayModal({ onClose, onAdd, cities }) {
   const [date, setDate] = useState('');
   const [cityId, setCityId] = useState(cities[0]?.id || '');
@@ -87,9 +93,8 @@ function AddItemModal({ onClose, onAdd, day, places }) {
         <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: 'var(--ink-light)' }}>✕</button>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', marginBottom: '0.5rem' }}>Add to day</h2>
         <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '1.25rem' }}>
-          {new Date(day.date + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date(String(day.date).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
-
         <div style={{ display: 'flex', gap: '6px', marginBottom: '1.25rem' }}>
           {['place', 'custom'].map(m => (
             <button key={m} onClick={() => setMode(m)} style={{
@@ -103,7 +108,6 @@ function AddItemModal({ onClose, onAdd, day, places }) {
             </button>
           ))}
         </div>
-
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '12px' }}>
           {mode === 'place' ? (
             <div>
@@ -127,7 +131,6 @@ function AddItemModal({ onClose, onAdd, day, places }) {
               </div>
             </>
           )}
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-mid)', marginBottom: '5px' }}>Start time</label>
@@ -138,7 +141,6 @@ function AddItemModal({ onClose, onAdd, day, places }) {
               <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
             </div>
           </div>
-
           <button type="submit" disabled={loading} style={{ padding: '10px', background: 'var(--red)', color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)', marginTop: '0.25rem' }}>
             {loading ? 'Adding...' : 'Add to itinerary'}
           </button>
@@ -155,51 +157,32 @@ function TripMap({ days }) {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.L) return;
     const L = window.L;
-
     if (!mapInstance.current) {
       mapInstance.current = L.map(mapRef.current, { zoomControl: true }).setView([36.2048, 138.2529], 6);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        maxZoom: 19
+        attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
       }).addTo(mapInstance.current);
     }
-
     const map = mapInstance.current;
     map.eachLayer(layer => { if (layer._popup || layer._latlng) map.removeLayer(layer); });
-
     const bounds = [];
-
     days.forEach((day, dayIdx) => {
-      const items = day.items || [];
-      items.forEach(item => {
+      (day.items || []).forEach(item => {
         if (item.place_lat && item.place_lng) {
-          const lat = parseFloat(item.place_lat);
-          const lng = parseFloat(item.place_lng);
+          const lat = parseFloat(item.place_lat), lng = parseFloat(item.place_lng);
           bounds.push([lat, lng]);
-
           const icon = L.divIcon({
             className: '',
             html: `<div style="width:28px;height:28px;border-radius:50%;background:var(--red);border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.3)">${dayIdx + 1}</div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
+            iconSize: [28, 28], iconAnchor: [14, 14]
           });
-
-          L.marker([lat, lng], { icon })
-            .addTo(map)
+          L.marker([lat, lng], { icon }).addTo(map)
             .bindPopup(`<b>${item.place_name || item.custom_title}</b><br/><small>Day ${dayIdx + 1}</small>`);
         }
       });
-
-      if (day.city_lat && day.city_lng) {
-        bounds.push([parseFloat(day.city_lat), parseFloat(day.city_lng)]);
-      }
+      if (day.city_lat && day.city_lng) bounds.push([parseFloat(day.city_lat), parseFloat(day.city_lng)]);
     });
-
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [40, 40] });
-    }
-
-    return () => {};
+    if (bounds.length > 0) map.fitBounds(bounds, { padding: [40, 40] });
   }, [days]);
 
   useEffect(() => {
@@ -217,9 +200,7 @@ function TripMap({ days }) {
     if (!window.L) document.head.appendChild(script);
   }, []);
 
-  return (
-    <div ref={mapRef} style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-lg)' }} />
-  );
+  return <div ref={mapRef} style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-lg)' }} />;
 }
 
 export default function TripPage() {
@@ -233,12 +214,24 @@ export default function TripPage() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [planFilter, setPlanFilter] = useState('all');
+
+  // Planning sidebar drag state
   const [dragPlaceId, setDragPlaceId] = useState(null);
   const [dragOverDayId, setDragOverDayId] = useState(null);
 
+  // Item reorder drag state
+  const [dragItemId, setDragItemId] = useState(null);
+  const [dragOverItemIdx, setDragOverItemIdx] = useState(null);
+
+  // Drop on day detail area
+  const [dragOverDetail, setDragOverDetail] = useState(false);
+
   useEffect(() => {
     Promise.all([api.days(), api.cities(), api.places()])
-      .then(([d, c, p]) => { setDays(d); setCities(c); setAllPlaces(p); if (d.length) setActiveDay(d[0].id); })
+      .then(([d, c, p]) => {
+        setDays(d); setCities(c); setAllPlaces(p);
+        if (d.length) setActiveDay(d[0].id);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -271,30 +264,31 @@ export default function TripPage() {
     return p.status === planFilter;
   });
 
+  // ── Planning sidebar drag (drop onto day sidebar item) ──────────────────
   function handlePlanDragStart(e, place) {
     setDragPlaceId(place.id);
     e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('type', 'place');
   }
 
   function handlePlanDragEnd() {
     setDragPlaceId(null);
     setDragOverDayId(null);
+    setDragOverDetail(false);
   }
 
-  function handleDayDragOver(e, dayId) {
+  function handleDaySidebarDragOver(e, dayId) {
     if (!dragPlaceId) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     setDragOverDayId(dayId);
   }
 
-  function handleDayDragLeave(e) {
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-      setDragOverDayId(null);
-    }
+  function handleDaySidebarDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDayId(null);
   }
 
-  async function handleDayDrop(e, dayId) {
+  async function handleDaySidebarDrop(e, dayId) {
     e.preventDefault();
     if (!dragPlaceId) return;
     setDragOverDayId(null);
@@ -303,11 +297,75 @@ export default function TripPage() {
     try {
       const item = await api.addItem(dayId, { place_id: placeId });
       setDays(prev => prev.map(d => d.id === dayId ? { ...d, items: [...(d.items || []), item] } : d));
+      setActiveDay(dayId);
     } catch {}
   }
 
+  // ── Planning drag onto day detail area ─────────────────────────────────
+  function handleDetailDragOver(e) {
+    if (!dragPlaceId || !currentDay) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDragOverDetail(true);
+  }
+
+  function handleDetailDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDetail(false);
+  }
+
+  async function handleDetailDrop(e) {
+    e.preventDefault();
+    if (!dragPlaceId || !currentDay) return;
+    setDragOverDetail(false);
+    const placeId = dragPlaceId;
+    setDragPlaceId(null);
+    try {
+      const item = await api.addItem(currentDay.id, { place_id: placeId });
+      setDays(prev => prev.map(d => d.id === currentDay.id ? { ...d, items: [...(d.items || []), item] } : d));
+    } catch {}
+  }
+
+  // ── Item reorder drag ───────────────────────────────────────────────────
+  function handleItemDragStart(e, item) {
+    e.stopPropagation();
+    setDragItemId(item.id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('type', 'item');
+  }
+
+  function handleItemDragEnd() {
+    setDragItemId(null);
+    setDragOverItemIdx(null);
+  }
+
+  function handleItemDragOver(e, idx) {
+    if (!dragItemId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverItemIdx(idx);
+  }
+
+  async function handleItemDrop(e, targetIdx) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragItemId || !currentDay) return;
+    const items = [...(currentDay.items || [])];
+    const fromIdx = items.findIndex(i => i.id === dragItemId);
+    setDragItemId(null);
+    setDragOverItemIdx(null);
+    if (fromIdx === -1 || fromIdx === targetIdx) return;
+    const [moved] = items.splice(fromIdx, 1);
+    const insertAt = fromIdx < targetIdx ? targetIdx - 1 : targetIdx;
+    items.splice(insertAt, 0, moved);
+    const updated = items.map((item, idx) => ({ ...item, order_index: idx }));
+    setDays(prev => prev.map(d => d.id === currentDay.id ? { ...d, items: updated } : d));
+    for (const item of updated) {
+      await api.updateItem(item.id, { order_index: item.order_index }).catch(() => {});
+    }
+  }
+
   const formatDate = (dateStr) => {
-    // Normalise to plain YYYY-MM-DD before appending time, so we always get local midnight
     const plain = String(dateStr).slice(0, 10);
     const d = new Date(plain + 'T12:00:00');
     return {
@@ -330,12 +388,8 @@ export default function TripPage() {
       <div style={{ background: 'var(--grad-hero)', padding: '3rem 2rem 2.5rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-display)', fontSize: '8rem', color: 'rgba(255,255,255,0.06)', lineHeight: 1, userSelect: 'none' }}>旅行</div>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'var(--grad-accent)' }} />
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'white', fontSize: '2.5rem', marginBottom: '0.5rem' }}>
-          The Trip
-        </h1>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
-          Day-by-day itinerary. Add days then fill them with places from the planning list.
-        </p>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'white', fontSize: '2.5rem', marginBottom: '0.5rem' }}>The Trip</h1>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>Day-by-day itinerary. Drag places from the list onto any day.</p>
       </div>
 
       {/* Map */}
@@ -344,12 +398,13 @@ export default function TripPage() {
       </div>
 
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 60px - 100px - 360px)' }}>
-        {/* Day sidebar */}
+
+        {/* ── Day sidebar ── */}
         <div style={{ width: '220px', minWidth: '220px', background: 'var(--paper-warm)', borderRight: '1px solid var(--border)', padding: '1rem 0', flexShrink: 0 }}>
           <div style={{ padding: '0 1rem 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-light)' }}>Days</span>
             {user && (
-              <button onClick={() => setShowAddDay(true)} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--ink)', color: 'white', border: 'none', fontSize: '1rem', lineHeight: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+              <button onClick={() => setShowAddDay(true)} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--ink)', color: 'white', border: 'none', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
             )}
           </div>
 
@@ -360,14 +415,15 @@ export default function TripPage() {
               <div
                 key={day.id}
                 onClick={() => setActiveDay(day.id)}
-                onDragOver={e => handleDayDragOver(e, day.id)}
-                onDragLeave={handleDayDragLeave}
-                onDrop={e => handleDayDrop(e, day.id)}
+                onDragOver={e => handleDaySidebarDragOver(e, day.id)}
+                onDragLeave={handleDaySidebarDragLeave}
+                onDrop={e => handleDaySidebarDrop(e, day.id)}
                 style={{
                   padding: '10px 1rem', cursor: dragPlaceId ? 'copy' : 'pointer',
-                  background: activeDay === day.id ? 'white' : dragOverDayId === day.id ? 'rgba(199,43,36,0.06)' : 'transparent',
+                  background: activeDay === day.id ? 'white' : dragOverDayId === day.id ? 'rgba(232,25,125,0.06)' : 'transparent',
                   borderLeft: activeDay === day.id ? '3px solid var(--red)' : dragOverDayId === day.id ? '3px solid var(--red)' : '3px solid transparent',
-                  transition: 'all 0.15s', outline: dragOverDayId === day.id ? '2px dashed var(--red)' : 'none', outlineOffset: '-2px'
+                  transition: 'all 0.15s',
+                  outline: dragOverDayId === day.id ? '2px dashed var(--red)' : 'none', outlineOffset: '-2px'
                 }}
               >
                 {(() => { const f = formatDate(day.date); return (
@@ -390,8 +446,22 @@ export default function TripPage() {
           )}
         </div>
 
-        {/* Day detail */}
-        <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+        {/* ── Day detail ── */}
+        <div
+          style={{ flex: 1, padding: '2rem', overflowY: 'auto', position: 'relative',
+            outline: dragOverDetail ? '3px dashed var(--red)' : 'none', outlineOffset: '-4px',
+            background: dragOverDetail ? 'rgba(232,25,125,0.03)' : 'transparent', transition: 'background 0.15s'
+          }}
+          onDragOver={handleDetailDragOver}
+          onDragLeave={handleDetailDragLeave}
+          onDrop={handleDetailDrop}
+        >
+          {dragOverDetail && (
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', pointerEvents: 'none', textAlign: 'center', color: 'var(--red)', fontWeight: 600, fontSize: '1rem', opacity: 0.7 }}>
+              Drop to add to this day
+            </div>
+          )}
+
           {!currentDay ? (
             <div style={{ textAlign: 'center', paddingTop: '4rem' }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--paper-dark)', marginBottom: '1rem' }}>旅</div>
@@ -427,52 +497,138 @@ export default function TripPage() {
                 )}
               </div>
 
-              {/* Timeline */}
               {(!currentDay.items || currentDay.items.length === 0) ? (
-                <div style={{ padding: '3rem', textAlign: 'center', border: '1px dashed var(--border-mid)', borderRadius: 'var(--radius-lg)', color: 'var(--ink-light)', fontSize: '0.9rem' }}>
-                  Nothing planned yet for this day.{user ? ' Click "Add item" to start.' : ''}
+                <div style={{ padding: '3rem', textAlign: 'center', border: '2px dashed var(--border-mid)', borderRadius: 'var(--radius-lg)', color: 'var(--ink-light)', fontSize: '0.9rem' }}>
+                  {dragPlaceId ? 'Drop here to add to this day' : (user ? 'Drag a place here from the list, or click "+ Add item".' : 'Nothing planned yet.')}
                 </div>
               ) : (
                 <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '16px', top: 0, bottom: 0, width: '1px', background: 'var(--border-mid)' }} />
-                  {currentDay.items.map((item, idx) => (
-                    <div key={item.id} style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.25rem', position: 'relative' }}>
-                      <div style={{ width: '32px', minWidth: '32px', height: '32px', borderRadius: '50%', background: 'var(--red)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', zIndex: 1, boxShadow: '0 0 0 3px var(--paper)' }}>
-                        {CATEGORY_ICONS[item.place_category] || '📌'}
-                      </div>
-                      <div style={{ flex: 1, background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '0.875rem 1.125rem', boxShadow: 'var(--shadow-soft)' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                          <div>
-                            {(item.start_time || item.end_time) && (
-                              <div style={{ fontSize: '0.72rem', color: 'var(--red)', fontWeight: 500, letterSpacing: '0.06em', marginBottom: '3px' }}>
-                                {item.start_time?.slice(0,5)}{item.end_time ? ` - ${item.end_time.slice(0,5)}` : ''}
-                              </div>
-                            )}
-                            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--ink)' }}>
-                              {item.place_name || item.custom_title}
-                            </h4>
-                            {(item.custom_description) && (
-                              <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginTop: '3px' }}>{item.custom_description}</p>
-                            )}
+                  <div style={{ position: 'absolute', left: '15px', top: 0, bottom: 0, width: '1px', background: 'var(--border-mid)' }} />
+
+                  {/* Drop zone at top */}
+                  {dragItemId && (
+                    <div
+                      onDragOver={e => handleItemDragOver(e, 0)}
+                      onDrop={e => handleItemDrop(e, 0)}
+                      style={{ height: dragOverItemIdx === 0 ? '4px' : '8px', marginBottom: '4px', marginLeft: '48px',
+                        background: dragOverItemIdx === 0 ? 'var(--red)' : 'transparent', borderRadius: '2px', transition: 'all 0.1s' }}
+                    />
+                  )}
+
+                  {currentDay.items.map((item, idx) => {
+                    const fullPlace = item.place_id ? allPlaces.find(p => p.id === item.place_id) : null;
+                    const isDragging = dragItemId === item.id;
+                    const sc = fullPlace ? STATUS_COLORS[fullPlace.status] : null;
+
+                    return (
+                      <div key={item.id}>
+                        <div
+                          draggable={!!user}
+                          onDragStart={e => handleItemDragStart(e, item)}
+                          onDragEnd={handleItemDragEnd}
+                          style={{ display: 'flex', gap: '1.5rem', marginBottom: '4px', position: 'relative',
+                            opacity: isDragging ? 0.35 : 1, transition: 'opacity 0.15s' }}
+                        >
+                          {/* Timeline dot */}
+                          <div style={{ width: '32px', minWidth: '32px', height: '32px', borderRadius: '50%', background: 'var(--red)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', zIndex: 1, boxShadow: '0 0 0 3px var(--paper)', flexShrink: 0, marginTop: '10px' }}>
+                            {CATEGORY_ICONS[item.place_category] || '📌'}
                           </div>
-                          {user && (
-                            <button onClick={() => handleDeleteItem(currentDay.id, item.id)} style={{ color: 'var(--ink-light)', fontSize: '12px', cursor: 'pointer', padding: '2px 6px', background: 'none', border: 'none', flexShrink: 0 }}>✕</button>
-                          )}
+
+                          {/* Card */}
+                          <div style={{ flex: 1, background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '0.875rem 1.125rem', boxShadow: 'var(--shadow-soft)', cursor: user ? 'grab' : 'default' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+
+                                {/* Time + status row */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                  {(item.start_time || item.end_time) && (
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--red)', fontWeight: 600, letterSpacing: '0.06em', background: 'rgba(232,25,125,0.08)', padding: '1px 7px', borderRadius: '4px' }}>
+                                      {item.start_time?.slice(0,5)}{item.end_time ? ` – ${item.end_time.slice(0,5)}` : ''}
+                                    </span>
+                                  )}
+                                  {fullPlace && sc && (
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '1px 7px', borderRadius: '4px', background: sc.bg, color: sc.color, textTransform: 'capitalize' }}>
+                                      {fullPlace.status}
+                                    </span>
+                                  )}
+                                  {item.place_category && (
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--ink-light)', textTransform: 'capitalize' }}>{item.place_category}</span>
+                                  )}
+                                </div>
+
+                                {/* Title */}
+                                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+                                  {item.place_name || item.custom_title}
+                                </h4>
+
+                                {/* Place description */}
+                                {fullPlace?.description && (
+                                  <p style={{ fontSize: '0.82rem', color: 'var(--ink-mid)', marginTop: '5px', lineHeight: 1.5 }}>{fullPlace.description}</p>
+                                )}
+
+                                {/* Custom description/notes */}
+                                {item.custom_description && (
+                                  <p style={{ fontSize: '0.82rem', color: 'var(--ink-mid)', marginTop: '5px', lineHeight: 1.5 }}>{item.custom_description}</p>
+                                )}
+
+                                {/* Place notes */}
+                                {fullPlace?.notes && fullPlace.notes !== fullPlace.description && (
+                                  <p style={{ fontSize: '0.78rem', color: 'var(--ink-light)', marginTop: '4px', lineHeight: 1.5, fontStyle: 'italic' }}>{fullPlace.notes}</p>
+                                )}
+
+                                {/* Meta row: address, price, url */}
+                                {(fullPlace?.address || fullPlace?.price || fullPlace?.url) && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                                    {fullPlace?.address && (
+                                      <span style={{ fontSize: '0.76rem', color: 'var(--ink-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span>📍</span> {fullPlace.address}
+                                      </span>
+                                    )}
+                                    {fullPlace?.price && (
+                                      <span style={{ fontSize: '0.76rem', color: 'var(--ink-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span>💴</span> {fullPlace.price}
+                                      </span>
+                                    )}
+                                    {fullPlace?.url && (
+                                      <a href={fullPlace.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.76rem', color: 'var(--red)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                                        onClick={e => e.stopPropagation()}>
+                                        <span>🔗</span> Link
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {user && (
+                                <button onClick={() => handleDeleteItem(currentDay.id, item.id)} style={{ color: 'var(--ink-light)', fontSize: '12px', cursor: 'pointer', padding: '2px 6px', background: 'none', border: 'none', flexShrink: 0, opacity: 0.6 }}>✕</button>
+                              )}
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Drop zone below each item */}
+                        {dragItemId && (
+                          <div
+                            onDragOver={e => handleItemDragOver(e, idx + 1)}
+                            onDrop={e => handleItemDrop(e, idx + 1)}
+                            style={{ height: dragOverItemIdx === idx + 1 ? '4px' : '8px', marginBottom: '4px', marginLeft: '48px',
+                              background: dragOverItemIdx === idx + 1 ? 'var(--red)' : 'transparent', borderRadius: '2px', transition: 'all 0.1s' }}
+                          />
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
           )}
         </div>
 
-        {/* Planning sidebar */}
+        {/* ── Planning sidebar ── */}
         <div style={{ width: '260px', minWidth: '260px', borderLeft: '1px solid var(--border)', background: 'var(--paper-warm)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
           <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border)' }}>
             <div style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-light)', marginBottom: '0.5rem' }}>Planning List</div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--ink-light)', marginBottom: '0.5rem', lineHeight: 1.4 }}>Drag a place onto a day to add it.</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--ink-light)', marginBottom: '0.5rem', lineHeight: 1.4 }}>Drag a place onto a day or into the day view.</p>
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {['all', 'considering', 'shortlisted', 'booked'].map(s => (
                 <button key={s} onClick={() => setPlanFilter(s)} style={{
