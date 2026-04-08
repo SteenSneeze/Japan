@@ -429,27 +429,28 @@ const COST_CAT_COLORS = {
   other:            'var(--paper-warm)'
 };
 
-function fmt$( amount) {
+function fmt$(amount) {
   return `A$ ${parseFloat(amount).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function parseMoney(val) {
+  if (val == null || val === '') return 0;
+  // strip currency symbols, spaces, commas — keep digits, dot, minus
+  const n = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
+  return isNaN(n) ? 0 : n;
 }
 
 function CostSummary({ costs, flights = [], accoms = [] }) {
   const byCat = {};
 
   costs.forEach(c => {
-    byCat[c.category] = (byCat[c.category] || 0) + parseFloat(c.amount || 0);
+    byCat[c.category] = (byCat[c.category] || 0) + parseMoney(c.amount);
   });
 
-  const flightTotal = flights.reduce((sum, f) => {
-    const n = parseFloat(f.price);
-    return sum + (isNaN(n) ? 0 : n);
-  }, 0);
+  const flightTotal = flights.reduce((sum, f) => sum + parseMoney(f.price), 0);
   if (flightTotal > 0) byCat['flights'] = (byCat['flights'] || 0) + flightTotal;
 
-  const accomTotal = accoms.reduce((sum, a) => {
-    const n = parseFloat(a.total_price);
-    return sum + (isNaN(n) ? 0 : n);
-  }, 0);
+  const accomTotal = accoms.reduce((sum, a) => sum + parseMoney(a.total_price), 0);
   if (accomTotal > 0) byCat['accommodation'] = (byCat['accommodation'] || 0) + accomTotal;
 
   const total = Object.values(byCat).reduce((s, v) => s + v, 0);
