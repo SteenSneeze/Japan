@@ -67,12 +67,14 @@ export const api = {
   createFlight: (data) => req('POST', '/flights', data),
   updateFlight: (id, data) => req('PUT', `/flights/${id}`, data),
   deleteFlight: (id) => req('DELETE', `/flights/${id}`),
+  toggleFlightPayment: (flightId, userId) => req('POST', `/flights/${flightId}/payments/${userId}`),
 
   // Accommodations
   accommodations: () => req('GET', '/accommodations'),
   createAccommodation: (data) => req('POST', '/accommodations', data),
   updateAccommodation: (id, data) => req('PUT', `/accommodations/${id}`, data),
   deleteAccommodation: (id) => req('DELETE', `/accommodations/${id}`),
+  toggleAccomPayment: (accomId, userId) => req('POST', `/accommodations/${accomId}/payments/${userId}`),
 
   // Links
   links: () => req('GET', '/links'),

@@ -7,13 +7,38 @@ const router = express.Router();
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT a.*, c.name AS city_name, u.display_name AS added_by_name, u.avatar_color AS added_by_color
+      `SELECT a.*, c.name AS city_name, u.display_name AS added_by_name, u.avatar_color AS added_by_color,
+        COALESCE(json_agg(ap.user_id) FILTER (WHERE ap.user_id IS NOT NULL), '[]') AS paid_user_ids
        FROM accommodations a
        LEFT JOIN cities c ON a.city_id = c.id
        LEFT JOIN users u ON a.added_by = u.id
+       LEFT JOIN accommodation_payments ap ON ap.accommodation_id = a.id
+       GROUP BY a.id, c.name, u.display_name, u.avatar_color
        ORDER BY a.check_in ASC NULLS LAST, a.created_at ASC`
     );
     res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/:id/payments/:userId', requireAuth, async (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
+  const { id, userId } = req.params;
+  try {
+    const existing = await pool.query(
+      'SELECT id FROM accommodation_payments WHERE accommodation_id=$1 AND user_id=$2', [id, userId]
+    );
+    if (existing.rows.length) {
+      await pool.query('DELETE FROM accommodation_payments WHERE accommodation_id=$1 AND user_id=$2', [id, userId]);
+    } else {
+      await pool.query('INSERT INTO accommodation_payments (accommodation_id, user_id) VALUES ($1, $2)', [id, userId]);
+    }
+    const result = await pool.query(
+      `SELECT COALESCE(json_agg(user_id), '[]') AS paid_user_ids FROM accommodation_payments WHERE accommodation_id=$1`, [id]
+    );
+    res.json({ paid_user_ids: result.rows[0].paid_user_ids });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

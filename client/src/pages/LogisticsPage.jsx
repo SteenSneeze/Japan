@@ -161,14 +161,53 @@ function FlightModal({ flight, onSave, onClose }) {
       </div>
       <div style={S.row2}>
         <div style={S.field}><label style={S.label}>Booking Reference</label><input style={S.input} value={form.booking_reference} onChange={e => set('booking_reference', e.target.value)} placeholder="ABC123" /></div>
-        <div style={S.field}><label style={S.label}>Price</label><input style={S.input} value={form.price} onChange={e => set('price', e.target.value)} placeholder="£450 total" /></div>
+        <div style={S.field}><label style={S.label}>Price (AUD)</label><input style={S.input} type="number" step="0.01" min="0" value={form.price} onChange={e => set('price', e.target.value)} placeholder="0.00" /></div>
       </div>
       <div style={S.field}><label style={S.label}>Notes</label><input style={S.input} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Luggage, seat numbers…" /></div>
     </Modal>
   );
 }
 
-function FlightCard({ flight, onEdit, onDelete, canEdit }) {
+function PaymentRow({ paidIds, users, isAdmin, onToggle }) {
+  if (!users.length) return null;
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.6rem', marginTop: '0.25rem' }}>
+      <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-mid)', marginBottom: '0.4rem' }}>
+        Who's paid <span style={{ fontWeight: 400, color: 'var(--ink-light)' }}>({paidIds.length}/{users.length})</span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+        {users.map(u => {
+          const paid = paidIds.includes(u.id);
+          return (
+            <button
+              key={u.id}
+              onClick={() => isAdmin && onToggle(u.id)}
+              title={paid ? `${u.display_name} — paid ✓` : `${u.display_name} — not paid yet${isAdmin ? ' (click to mark paid)' : ''}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '3px 9px 3px 5px', borderRadius: '999px',
+                border: '1px solid ' + (paid ? '#2e7d32' : 'var(--border)'),
+                background: paid ? '#e8f5e9' : 'white',
+                cursor: isAdmin ? 'pointer' : 'default',
+                fontSize: '0.75rem', fontFamily: 'var(--font-body)',
+                color: paid ? '#2e7d32' : 'var(--ink-light)',
+                transition: 'all 0.15s'
+              }}
+            >
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: u.avatar_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'white', fontWeight: 700, flexShrink: 0 }}>
+                {u.display_name.slice(0, 1).toUpperCase()}
+              </div>
+              {u.display_name}
+              {paid && <span style={{ fontSize: '10px' }}>✓</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FlightCard({ flight, onEdit, onDelete, canEdit, users, isAdmin, onTogglePayment }) {
   return (
     <div style={S.card}>
       <div style={S.cardTop}>
@@ -187,9 +226,10 @@ function FlightCard({ flight, onEdit, onDelete, canEdit }) {
         {flight.departure_datetime && <span style={S.metaItem}><span style={S.metaLabel}>Departs</span>{fmt(flight.departure_datetime)}</span>}
         {flight.arrival_datetime && <span style={S.metaItem}><span style={S.metaLabel}>Arrives</span>{fmt(flight.arrival_datetime)}</span>}
         {flight.booking_reference && <span style={S.metaItem}><span style={S.metaLabel}>Ref</span><strong>{flight.booking_reference}</strong></span>}
-        {flight.price && <span style={S.metaItem}><span style={S.metaLabel}>Price</span>{flight.price}</span>}
+        {flight.price && <span style={S.metaItem}><span style={S.metaLabel}>Price</span>{fmt$(flight.price)}</span>}
       </div>
       {flight.notes && <div style={S.notes}>{flight.notes}</div>}
+      <PaymentRow paidIds={flight.paid_user_ids || []} users={users} isAdmin={isAdmin} onToggle={uid => onTogglePayment(flight.id, uid)} />
       <div style={S.addedBy}>Added by {flight.added_by_name || 'unknown'}</div>
     </div>
   );
@@ -248,8 +288,8 @@ function AccomModal({ accom, cities, onSave, onClose }) {
         <div style={S.field}><label style={S.label}>Check-out</label><input style={S.input} type="date" value={form.check_out} onChange={e => set('check_out', e.target.value)} /></div>
       </div>
       <div style={S.row2}>
-        <div style={S.field}><label style={S.label}>Price / Night</label><input style={S.input} value={form.price_per_night} onChange={e => set('price_per_night', e.target.value)} placeholder="¥12,000" /></div>
-        <div style={S.field}><label style={S.label}>Total Price</label><input style={S.input} value={form.total_price} onChange={e => set('total_price', e.target.value)} placeholder="¥60,000" /></div>
+        <div style={S.field}><label style={S.label}>Price / Night (AUD)</label><input style={S.input} type="number" step="0.01" min="0" value={form.price_per_night} onChange={e => set('price_per_night', e.target.value)} placeholder="0.00" /></div>
+        <div style={S.field}><label style={S.label}>Total Price (AUD)</label><input style={S.input} type="number" step="0.01" min="0" value={form.total_price} onChange={e => set('total_price', e.target.value)} placeholder="0.00" /></div>
       </div>
       <div style={S.field}><label style={S.label}>Booking Reference</label><input style={S.input} value={form.booking_reference} onChange={e => set('booking_reference', e.target.value)} placeholder="XYZ987654" /></div>
       <div style={S.field}><label style={S.label}>URL</label><input style={S.input} type="url" value={form.url} onChange={e => set('url', e.target.value)} placeholder="https://…" /></div>
@@ -258,7 +298,7 @@ function AccomModal({ accom, cities, onSave, onClose }) {
   );
 }
 
-function AccomCard({ accom, onEdit, onDelete, canEdit }) {
+function AccomCard({ accom, onEdit, onDelete, canEdit, users, isAdmin, onTogglePayment }) {
   const nights = accom.check_in && accom.check_out
     ? Math.round((new Date(accom.check_out) - new Date(accom.check_in)) / 86400000)
     : null;
@@ -282,12 +322,13 @@ function AccomCard({ accom, onEdit, onDelete, canEdit }) {
         {accom.check_out && <span style={S.metaItem}><span style={S.metaLabel}>Check-out</span>{fmtDate(accom.check_out)}</span>}
         {nights !== null && <span style={S.metaItem}><span style={S.metaLabel}>Nights</span>{nights}</span>}
         {accom.booking_reference && <span style={S.metaItem}><span style={S.metaLabel}>Ref</span><strong>{accom.booking_reference}</strong></span>}
-        {accom.price_per_night && <span style={S.metaItem}><span style={S.metaLabel}>Per night</span>{accom.price_per_night}</span>}
-        {accom.total_price && <span style={S.metaItem}><span style={S.metaLabel}>Total</span>{accom.total_price}</span>}
+        {accom.price_per_night && <span style={S.metaItem}><span style={S.metaLabel}>Per night</span>{fmt$(accom.price_per_night)}</span>}
+        {accom.total_price && <span style={S.metaItem}><span style={S.metaLabel}>Total</span>{fmt$(accom.total_price)}</span>}
       </div>
       {accom.address && <div style={{ ...S.metaItem, marginTop: '0.1rem' }}><span style={S.metaLabel}>Address</span>{accom.address}</div>}
       {accom.url && <div style={{ marginTop: '0.25rem' }}><a href={accom.url} target="_blank" rel="noreferrer" style={{ color: 'var(--red)', fontSize: '0.82rem' }}>View booking ↗</a></div>}
       {accom.notes && <div style={S.notes}>{accom.notes}</div>}
+      <PaymentRow paidIds={accom.paid_user_ids || []} users={users} isAdmin={isAdmin} onToggle={uid => onTogglePayment(accom.id, uid)} />
       <div style={S.addedBy}>Added by {accom.added_by_name || 'unknown'}</div>
     </div>
   );
@@ -505,42 +546,7 @@ function CostCard({ cost, onEdit, onDelete, canEdit, users, isAdmin, onTogglePay
       </div>
       {cost.notes && <div style={S.notes}>{cost.notes}</div>}
 
-      {users.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.6rem', marginTop: '0.25rem' }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-mid)', marginBottom: '0.4rem' }}>
-            Who's paid{' '}
-            <span style={{ fontWeight: 400, color: 'var(--ink-light)' }}>({paidIds.length}/{users.length})</span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-            {users.map(u => {
-              const paid = paidIds.includes(u.id);
-              return (
-                <button
-                  key={u.id}
-                  onClick={() => isAdmin && onTogglePayment(cost.id, u.id)}
-                  title={paid ? `${u.display_name} — paid ✓` : `${u.display_name} — not paid yet${isAdmin ? ' (click to mark paid)' : ''}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    padding: '3px 9px 3px 5px', borderRadius: '999px',
-                    border: '1px solid ' + (paid ? '#2e7d32' : 'var(--border)'),
-                    background: paid ? '#e8f5e9' : 'white',
-                    cursor: isAdmin ? 'pointer' : 'default',
-                    fontSize: '0.75rem', fontFamily: 'var(--font-body)',
-                    color: paid ? '#2e7d32' : 'var(--ink-light)',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: u.avatar_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'white', fontWeight: 700, flexShrink: 0 }}>
-                    {u.display_name.slice(0, 1).toUpperCase()}
-                  </div>
-                  {u.display_name}
-                  {paid && <span style={{ fontSize: '10px' }}>✓</span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <PaymentRow paidIds={paidIds} users={users} isAdmin={isAdmin} onToggle={uid => onTogglePayment(cost.id, uid)} />
 
       <div style={S.addedBy}>Added by {cost.added_by_name || 'unknown'}</div>
     </div>
@@ -591,6 +597,20 @@ export default function LogisticsPage() {
     } catch {}
   }
 
+  async function handleToggleFlightPayment(flightId, userId) {
+    try {
+      const { paid_user_ids } = await api.toggleFlightPayment(flightId, userId);
+      setFlights(prev => prev.map(f => f.id === flightId ? { ...f, paid_user_ids } : f));
+    } catch {}
+  }
+
+  async function handleToggleAccomPayment(accomId, userId) {
+    try {
+      const { paid_user_ids } = await api.toggleAccomPayment(accomId, userId);
+      setAccoms(prev => prev.map(a => a.id === accomId ? { ...a, paid_user_ids } : a));
+    } catch {}
+  }
+
   const counts = { costs: flights.length + accoms.length + costs.length, links: links.length };
 
   function upsert(setter, saved) {
@@ -637,7 +657,7 @@ export default function LogisticsPage() {
           </div>
           {flights.length === 0
             ? <div style={{ ...S.empty, padding: '1.25rem', textAlign: 'left', fontSize: '0.85rem' }}>No flights yet.{user ? ' Click "+ Add Flight" to get started.' : ''}</div>
-            : flights.map(f => <FlightCard key={f.id} flight={f} canEdit={!!user} onEdit={d => setModal({ type: 'flights', data: d })} onDelete={id => del(setFlights, api.deleteFlight, id, 'flight')} />)
+            : flights.map(f => <FlightCard key={f.id} flight={f} canEdit={!!user} onEdit={d => setModal({ type: 'flights', data: d })} onDelete={id => del(setFlights, api.deleteFlight, id, 'flight')} users={users} isAdmin={!!user?.is_admin} onTogglePayment={handleToggleFlightPayment} />)
           }
 
           {/* Accommodation */}
@@ -647,7 +667,7 @@ export default function LogisticsPage() {
           </div>
           {accoms.length === 0
             ? <div style={{ ...S.empty, padding: '1.25rem', textAlign: 'left', fontSize: '0.85rem' }}>No accommodation yet.{user ? ' Click "+ Add Accommodation" to get started.' : ''}</div>
-            : accoms.map(a => <AccomCard key={a.id} accom={a} canEdit={!!user} onEdit={d => setModal({ type: 'accommodation', data: d })} onDelete={id => del(setAccoms, api.deleteAccommodation, id, 'accommodation')} />)
+            : accoms.map(a => <AccomCard key={a.id} accom={a} canEdit={!!user} onEdit={d => setModal({ type: 'accommodation', data: d })} onDelete={id => del(setAccoms, api.deleteAccommodation, id, 'accommodation')} users={users} isAdmin={!!user?.is_admin} onTogglePayment={handleToggleAccomPayment} />)
           }
 
           {/* Cost items */}

@@ -155,6 +155,22 @@ async function initDb() {
         UNIQUE(cost_id, user_id)
       );
 
+      CREATE TABLE IF NOT EXISTS flight_payments (
+        id SERIAL PRIMARY KEY,
+        flight_id INTEGER REFERENCES flights(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(flight_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS accommodation_payments (
+        id SERIAL PRIMARY KEY,
+        accommodation_id INTEGER REFERENCES accommodations(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(accommodation_id, user_id)
+      );
+
       INSERT INTO cities (name, lat, lng, order_index)
       SELECT * FROM (VALUES
         ('Osaka', 34.6937::DECIMAL, 135.5023::DECIMAL, 1),
