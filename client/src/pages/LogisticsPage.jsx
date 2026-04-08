@@ -392,15 +392,28 @@ function fmt$( amount) {
   return `A$ ${parseFloat(amount).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function CostSummary({ costs }) {
-  if (costs.length === 0) return null;
-
-  const total = costs.reduce((sum, c) => sum + parseFloat(c.amount), 0);
-
+function CostSummary({ costs, flights = [], accoms = [] }) {
   const byCat = {};
+
   costs.forEach(c => {
-    byCat[c.category] = (byCat[c.category] || 0) + parseFloat(c.amount);
+    byCat[c.category] = (byCat[c.category] || 0) + parseFloat(c.amount || 0);
   });
+
+  const flightTotal = flights.reduce((sum, f) => {
+    const n = parseFloat(f.price);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  if (flightTotal > 0) byCat['flights'] = (byCat['flights'] || 0) + flightTotal;
+
+  const accomTotal = accoms.reduce((sum, a) => {
+    const n = parseFloat(a.total_price);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  if (accomTotal > 0) byCat['accommodation'] = (byCat['accommodation'] || 0) + accomTotal;
+
+  const total = Object.values(byCat).reduce((s, v) => s + v, 0);
+
+  if (total === 0 && costs.length === 0 && flights.length === 0 && accoms.length === 0) return null;
 
   return (
     <div style={S.summary}>
@@ -568,7 +581,7 @@ export default function LogisticsPage() {
 
       {tab === 'costs' && (
         <>
-          <CostSummary costs={costs} />
+          <CostSummary costs={costs} flights={flights} accoms={accoms} />
 
           {/* Flights */}
           <div style={sectionHead}>
