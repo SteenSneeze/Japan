@@ -481,8 +481,9 @@ function CostModal({ cost, onSave, onClose }) {
   );
 }
 
-function CostCard({ cost, onEdit, onDelete, canEdit }) {
+function CostCard({ cost, onEdit, onDelete, canEdit, users, isAdmin, onTogglePayment }) {
   const catLabel = COST_CATEGORIES.find(c => c.value === cost.category)?.label || cost.category;
+  const paidIds = cost.paid_user_ids || [];
   return (
     <div style={{ ...S.card, borderLeft: '3px solid', borderLeftColor: COST_CAT_COLORS[cost.category] || 'var(--border)' }}>
       <div style={S.cardTop}>
@@ -503,6 +504,44 @@ function CostCard({ cost, onEdit, onDelete, canEdit }) {
         {cost.paid_by && <span style={S.metaItem}><span style={S.metaLabel}>Paid by</span>{cost.paid_by}</span>}
       </div>
       {cost.notes && <div style={S.notes}>{cost.notes}</div>}
+
+      {users.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.6rem', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-mid)', marginBottom: '0.4rem' }}>
+            Who's paid{' '}
+            <span style={{ fontWeight: 400, color: 'var(--ink-light)' }}>({paidIds.length}/{users.length})</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            {users.map(u => {
+              const paid = paidIds.includes(u.id);
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => isAdmin && onTogglePayment(cost.id, u.id)}
+                  title={paid ? `${u.display_name} — paid ✓` : `${u.display_name} — not paid yet${isAdmin ? ' (click to mark paid)' : ''}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '3px 9px 3px 5px', borderRadius: '999px',
+                    border: '1px solid ' + (paid ? '#2e7d32' : 'var(--border)'),
+                    background: paid ? '#e8f5e9' : 'white',
+                    cursor: isAdmin ? 'pointer' : 'default',
+                    fontSize: '0.75rem', fontFamily: 'var(--font-body)',
+                    color: paid ? '#2e7d32' : 'var(--ink-light)',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: u.avatar_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'white', fontWeight: 700, flexShrink: 0 }}>
+                    {u.display_name.slice(0, 1).toUpperCase()}
+                  </div>
+                  {u.display_name}
+                  {paid && <span style={{ fontSize: '10px' }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div style={S.addedBy}>Added by {cost.added_by_name || 'unknown'}</div>
     </div>
   );
@@ -535,14 +574,22 @@ export default function LogisticsPage() {
   const [links, setLinks] = useState([]);
   const [costs, setCosts] = useState([]);
   const [cities, setCities] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    Promise.all([api.flights(), api.accommodations(), api.links(), api.costs(), api.cities()])
-      .then(([f, a, l, c, ci]) => { setFlights(f); setAccoms(a); setLinks(l); setCosts(c); setCities(ci); })
+    Promise.all([api.flights(), api.accommodations(), api.links(), api.costs(), api.cities(), api.users()])
+      .then(([f, a, l, c, ci, u]) => { setFlights(f); setAccoms(a); setLinks(l); setCosts(c); setCities(ci); setUsers(u); })
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleTogglePayment(costId, userId) {
+    try {
+      const { paid_user_ids } = await api.toggleCostPayment(costId, userId);
+      setCosts(prev => prev.map(c => c.id === costId ? { ...c, paid_user_ids } : c));
+    } catch {}
+  }
 
   const counts = { costs: flights.length + accoms.length + costs.length, links: links.length };
 
@@ -628,7 +675,7 @@ export default function LogisticsPage() {
             ? <div style={{ ...S.empty, padding: '1.25rem', textAlign: 'left', fontSize: '0.85rem' }}>No costs tracked yet.{user ? ' Add flights, accommodation, activities…' : ' Sign in to add costs.'}</div>
             : costs
                 .filter(c => costFilter === 'all' || c.category === costFilter)
-                .map(c => <CostCard key={c.id} cost={c} canEdit={!!user} onEdit={d => setModal({ type: 'costs', data: d })} onDelete={id => del(setCosts, api.deleteCost, id, 'cost')} />)
+                .map(c => <CostCard key={c.id} cost={c} canEdit={!!user} onEdit={d => setModal({ type: 'costs', data: d })} onDelete={id => del(setCosts, api.deleteCost, id, 'cost')} users={users} isAdmin={!!user?.is_admin} onTogglePayment={handleTogglePayment} />)
           }
         </>
       )}

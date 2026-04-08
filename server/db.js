@@ -147,6 +147,14 @@ async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS cost_payments (
+        id SERIAL PRIMARY KEY,
+        cost_id INTEGER REFERENCES costs(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(cost_id, user_id)
+      );
+
       INSERT INTO cities (name, lat, lng, order_index)
       SELECT * FROM (VALUES
         ('Osaka', 34.6937::DECIMAL, 135.5023::DECIMAL, 1),

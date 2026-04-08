@@ -84,5 +84,6 @@ export const api = {
   costs: () => req('GET', '/costs'),
   createCost: (data) => req('POST', '/costs', data),
   updateCost: (id, data) => req('PUT', `/costs/${id}`, data),
-  deleteCost: (id) => req('DELETE', `/costs/${id}`)
+  deleteCost: (id) => req('DELETE', `/costs/${id}`),
+  toggleCostPayment: (costId, userId) => req('POST', `/costs/${costId}/payments/${userId}`)
 };

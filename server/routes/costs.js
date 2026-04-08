@@ -7,12 +7,37 @@ const router = express.Router();
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.*, u.display_name AS added_by_name, u.avatar_color AS added_by_color
+      `SELECT c.*, u.display_name AS added_by_name, u.avatar_color AS added_by_color,
+        COALESCE(json_agg(cp.user_id) FILTER (WHERE cp.user_id IS NOT NULL), '[]') AS paid_user_ids
        FROM costs c
        LEFT JOIN users u ON c.added_by = u.id
+       LEFT JOIN cost_payments cp ON cp.cost_id = c.id
+       GROUP BY c.id, u.display_name, u.avatar_color
        ORDER BY c.date ASC NULLS LAST, c.created_at ASC`
     );
     res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/:id/payments/:userId', requireAuth, async (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
+  const { id, userId } = req.params;
+  try {
+    const existing = await pool.query(
+      'SELECT id FROM cost_payments WHERE cost_id=$1 AND user_id=$2', [id, userId]
+    );
+    if (existing.rows.length) {
+      await pool.query('DELETE FROM cost_payments WHERE cost_id=$1 AND user_id=$2', [id, userId]);
+    } else {
+      await pool.query('INSERT INTO cost_payments (cost_id, user_id) VALUES ($1, $2)', [id, userId]);
+    }
+    const result = await pool.query(
+      `SELECT COALESCE(json_agg(user_id), '[]') AS paid_user_ids FROM cost_payments WHERE cost_id=$1`, [id]
+    );
+    res.json({ paid_user_ids: result.rows[0].paid_user_ids });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
