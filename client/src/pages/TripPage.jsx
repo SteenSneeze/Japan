@@ -307,7 +307,9 @@ export default function TripPage() {
   }
 
   const formatDate = (dateStr) => {
-    const d = new Date(dateStr + 'T12:00:00');
+    // Normalise to plain YYYY-MM-DD before appending time, so we always get local midnight
+    const plain = String(dateStr).slice(0, 10);
+    const d = new Date(plain + 'T12:00:00');
     return {
       weekday: d.toLocaleDateString('en-AU', { weekday: 'short' }),
       day:     d.toLocaleDateString('en-AU', { day: 'numeric' }),
