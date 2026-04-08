@@ -55,6 +55,7 @@ export const api = {
 
   // Itinerary
   seedDays: (start, end) => req('POST', '/itinerary/seed-days', { start, end }),
+  clearAllDays: () => req('DELETE', '/itinerary/days/all'),
   days: () => req('GET', '/itinerary/days'),
   createDay: (data) => req('POST', '/itinerary/days', data),
   updateDay: (id, data) => req('PUT', `/itinerary/days/${id}`, data),

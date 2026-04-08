@@ -64,6 +64,7 @@ export default function AdminPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
+  const [clearBusy, setClearBusy] = useState(false);
 
   useEffect(() => {
     api.users().then(setUsers).catch(() => {});
@@ -180,6 +181,27 @@ export default function AdminPage() {
           <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '1rem' }}>Insert every day in a date range into the trip itinerary. Skips dates that already exist.</p>
           <SeedDaysForm onMessage={setSeedMsg} />
           {seedMsg && <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: seedMsg.startsWith('✓') ? '#2e7d32' : 'var(--red)' }}>{seedMsg}</p>}
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1.25rem 0' }} />
+          <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '0.75rem' }}>Danger zone — removes all trip days and their itinerary items.</p>
+          <button
+            disabled={clearBusy}
+            onClick={async () => {
+              if (!window.confirm('Delete ALL trip days and itinerary items? This cannot be undone.')) return;
+              setClearBusy(true);
+              setSeedMsg('');
+              try {
+                const { deleted } = await api.clearAllDays();
+                setSeedMsg(`✓ Deleted ${deleted} day${deleted !== 1 ? 's' : ''}.`);
+              } catch (err) {
+                setSeedMsg(err.message || 'Failed to delete days');
+              } finally {
+                setClearBusy(false);
+              }
+            }}
+            style={{ padding: '8px 20px', background: 'var(--red)', color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+          >
+            {clearBusy ? 'Deleting…' : 'Clear all days'}
+          </button>
         </div>
       </div>
 

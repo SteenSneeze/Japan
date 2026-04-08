@@ -31,6 +31,19 @@ router.post('/seed-days', requireAuth, async (req, res) => {
   }
 });
 
+router.delete('/days/all', requireAuth, async (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const count = await pool.query('SELECT COUNT(*) FROM trip_days');
+    await pool.query('DELETE FROM trip_days');
+    await auditLog(req.user.id, 'days_cleared', `Deleted all ${count.rows[0].count} trip days`);
+    res.json({ deleted: parseInt(count.rows[0].count) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/days', async (req, res) => {
   try {
     const result = await pool.query(`
