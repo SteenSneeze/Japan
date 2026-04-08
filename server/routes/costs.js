@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../db');
+const { pool, auditLog } = require('../db');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -53,6 +53,7 @@ router.post('/', requireAuth, async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [title, amount, currency || 'GBP', category || 'other', date || null, paid_by, notes, req.user.id]
     );
+    await auditLog(req.user.id, 'cost_added', `Added cost: "${title}" — A$${parseFloat(amount).toFixed(2)} (${category || 'other'})`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -76,6 +77,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       [title, amount, currency, category, date || null, paid_by, notes, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    await auditLog(req.user.id, 'cost_updated', `Updated cost: "${result.rows[0].title}" — A$${parseFloat(result.rows[0].amount).toFixed(2)}`);
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -85,7 +87,10 @@ router.put('/:id', requireAuth, async (req, res) => {
 
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
+    const existing = await pool.query('SELECT title, amount FROM costs WHERE id=$1', [req.params.id]);
     await pool.query('DELETE FROM costs WHERE id=$1', [req.params.id]);
+    const c = existing.rows[0];
+    await auditLog(req.user.id, 'cost_deleted', `Deleted cost: "${c?.title}" — A$${parseFloat(c?.amount || 0).toFixed(2)}`);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);

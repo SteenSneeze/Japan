@@ -141,6 +141,8 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
                    (SELECT avatar_color FROM users WHERE id=$2) AS avatar_color`,
       [req.params.id, req.user.id, content.trim()]
     );
+    const place = await pool.query('SELECT name FROM places WHERE id=$1', [req.params.id]);
+    await auditLog(req.user.id, 'comment_added', `Commented on "${place.rows[0]?.name || `#${req.params.id}`}"`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

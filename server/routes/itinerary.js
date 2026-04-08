@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../db');
+const { pool, auditLog } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -45,6 +45,9 @@ router.post('/days', requireAuth, async (req, res) => {
       `INSERT INTO trip_days (date, city_id, label, notes) VALUES ($1,$2,$3,$4) RETURNING *`,
       [date, city_id, label, notes]
     );
+    const city = city_id ? await pool.query('SELECT name FROM cities WHERE id=$1', [city_id]) : null;
+    const cityName = city?.rows[0]?.name;
+    await auditLog(req.user.id, 'day_added', `Added day: ${date}${cityName ? ` — ${cityName}` : ''}${label ? ` (${label})` : ''}`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -59,6 +62,7 @@ router.put('/days/:id', requireAuth, async (req, res) => {
        label=COALESCE($3,label), notes=COALESCE($4,notes) WHERE id=$5 RETURNING *`,
       [date, city_id, label, notes, req.params.id]
     );
+    await auditLog(req.user.id, 'day_updated', `Updated day: ${result.rows[0]?.date}`);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -67,7 +71,10 @@ router.put('/days/:id', requireAuth, async (req, res) => {
 
 router.delete('/days/:id', requireAuth, async (req, res) => {
   try {
+    const existing = await pool.query('SELECT date, label FROM trip_days WHERE id=$1', [req.params.id]);
     await pool.query('DELETE FROM trip_days WHERE id=$1', [req.params.id]);
+    const day = existing.rows[0];
+    await auditLog(req.user.id, 'day_deleted', `Deleted day: ${day?.date}${day?.label ? ` (${day.label})` : ''}`);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -82,6 +89,13 @@ router.post('/days/:dayId/items', requireAuth, async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [req.params.dayId, place_id, custom_title, custom_description, start_time, end_time, order_index || 0]
     );
+    const day = await pool.query('SELECT date FROM trip_days WHERE id=$1', [req.params.dayId]);
+    let itemName = custom_title;
+    if (place_id) {
+      const place = await pool.query('SELECT name FROM places WHERE id=$1', [place_id]);
+      itemName = place.rows[0]?.name;
+    }
+    await auditLog(req.user.id, 'item_added', `Added "${itemName}" to day ${day.rows[0]?.date}`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -99,6 +113,7 @@ router.put('/items/:id', requireAuth, async (req, res) => {
        WHERE id=$7 RETURNING *`,
       [custom_title, custom_description, start_time, end_time, order_index, day_id, req.params.id]
     );
+    await auditLog(req.user.id, 'item_updated', `Updated itinerary item "${custom_title || `#${req.params.id}`}"`);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -107,7 +122,17 @@ router.put('/items/:id', requireAuth, async (req, res) => {
 
 router.delete('/items/:id', requireAuth, async (req, res) => {
   try {
+    const existing = await pool.query(
+      `SELECT i.custom_title, p.name AS place_name, d.date
+       FROM itinerary_items i
+       LEFT JOIN places p ON i.place_id = p.id
+       LEFT JOIN trip_days d ON i.day_id = d.id
+       WHERE i.id=$1`, [req.params.id]
+    );
     await pool.query('DELETE FROM itinerary_items WHERE id=$1', [req.params.id]);
+    const item = existing.rows[0];
+    const itemName = item?.custom_title || item?.place_name || `#${req.params.id}`;
+    await auditLog(req.user.id, 'item_deleted', `Removed "${itemName}" from day ${item?.date}`);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

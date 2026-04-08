@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../db');
+const { pool, auditLog } = require('../db');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -53,6 +53,7 @@ router.post('/', requireAuth, async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
       [airline, flight_number, from_location, to_location, departure_datetime || null, arrival_datetime || null, booking_reference, price, notes, req.user.id]
     );
+    await auditLog(req.user.id, 'flight_added', `Added flight: ${from_location} → ${to_location}${airline ? ` (${airline}${flight_number ? ' ' + flight_number : ''})` : ''}`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -78,7 +79,9 @@ router.put('/:id', requireAuth, async (req, res) => {
       [airline, flight_number, from_location, to_location, departure_datetime || null, arrival_datetime || null, booking_reference, price, notes, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
-    res.json(result.rows[0]);
+    const f = result.rows[0];
+    await auditLog(req.user.id, 'flight_updated', `Updated flight: ${f.from_location} → ${f.to_location}${f.airline ? ` (${f.airline})` : ''}`);
+    res.json(f);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -87,7 +90,10 @@ router.put('/:id', requireAuth, async (req, res) => {
 
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
+    const existing = await pool.query('SELECT from_location, to_location, airline FROM flights WHERE id=$1', [req.params.id]);
     await pool.query('DELETE FROM flights WHERE id=$1', [req.params.id]);
+    const f = existing.rows[0];
+    await auditLog(req.user.id, 'flight_deleted', `Deleted flight: ${f?.from_location} → ${f?.to_location}`);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
