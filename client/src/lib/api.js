@@ -54,6 +54,7 @@ export const api = {
   addComment: (id, content) => req('POST', `/places/${id}/comments`, { content }),
 
   // Itinerary
+  seedDays: (start, end) => req('POST', '/itinerary/seed-days', { start, end }),
   days: () => req('GET', '/itinerary/days'),
   createDay: (data) => req('POST', '/itinerary/days', data),
   updateDay: (id, data) => req('PUT', `/itinerary/days/${id}`, data),

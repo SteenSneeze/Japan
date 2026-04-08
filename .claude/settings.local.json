@@ -9,7 +9,8 @@
       "Bash(node --check M:/Japan/server/routes/links.js)",
       "Bash(node --check M:/Japan/server/routes/costs.js)",
       "Bash(node --check M:/Japan/server/routes/auth.js)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(node seed-days.js)"
     ]
   }
 }

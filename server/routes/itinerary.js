@@ -4,6 +4,33 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.post('/seed-days', requireAuth, async (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Forbidden' });
+  const { start, end } = req.body;
+  if (!start || !end) return res.status(400).json({ error: 'start and end required' });
+  try {
+    const startDate = new Date(start + 'T12:00:00');
+    const endDate   = new Date(end   + 'T12:00:00');
+    if (isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
+      return res.status(400).json({ error: 'Invalid date range' });
+    }
+    const inserted = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const date = d.toISOString().slice(0, 10);
+      const result = await pool.query(
+        `INSERT INTO trip_days (date) VALUES ($1) ON CONFLICT DO NOTHING RETURNING id, date`,
+        [date]
+      );
+      if (result.rows.length) inserted.push(date);
+    }
+    await auditLog(req.user.id, 'days_seeded', `Bulk-added ${inserted.length} days (${start} → ${end})`);
+    res.json({ inserted });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/days', async (req, res) => {
   try {
     const result = await pool.query(`

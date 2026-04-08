@@ -4,6 +4,44 @@ import { useAuth } from '../hooks/useAuth';
 
 const AVATAR_COLORS = ['#C0392B', '#185FA5', '#3B6D11', '#884FAB', '#BA7517', '#0F6E56', '#993556'];
 
+function SeedDaysForm({ onMessage }) {
+  const [start, setStart] = useState('2026-11-20');
+  const [end, setEnd]     = useState('2026-12-09');
+  const [busy, setBusy]   = useState(false);
+
+  async function handleSeed(e) {
+    e.preventDefault();
+    setBusy(true);
+    onMessage('');
+    try {
+      const { inserted } = await api.seedDays(start, end);
+      onMessage(inserted.length === 0
+        ? '✓ All days in that range already exist — nothing new added.'
+        : `✓ Added ${inserted.length} day${inserted.length !== 1 ? 's' : ''} (${inserted[0]} → ${inserted[inserted.length - 1]})`
+      );
+    } catch (err) {
+      onMessage(err.message || 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const inp = { fontFamily: 'var(--font-body)', fontSize: '0.9rem', padding: '7px 12px', border: '1.5px solid var(--border-mid)', borderRadius: 'var(--radius)', background: 'white', color: 'var(--ink)', outline: 'none' };
+
+  return (
+    <form onSubmit={handleSeed} style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <input type="date" style={inp} value={start} onChange={e => setStart(e.target.value)} required />
+        <span style={{ color: 'var(--ink-light)', fontWeight: 300 }}>→</span>
+        <input type="date" style={inp} value={end} onChange={e => setEnd(e.target.value)} required />
+      </div>
+      <button type="submit" disabled={busy} style={{ padding: '8px 20px', background: 'var(--grad-accent)', color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', boxShadow: '0 2px 10px rgba(232,25,125,0.3)', whiteSpace: 'nowrap' }}>
+        {busy ? 'Adding…' : 'Add days'}
+      </button>
+    </form>
+  );
+}
+
 const ACTION_LABELS = {
   user_created:     { label: 'User created',      color: '#2e7d32', bg: '#e8f5e9' },
   login:            { label: 'Login',              color: '#1a56db', bg: '#e8f0fe' },
@@ -25,6 +63,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
 
   useEffect(() => {
     api.users().then(setUsers).catch(() => {});
@@ -70,9 +109,11 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <div style={{ background: 'var(--ink)', padding: '3rem 2rem 2.5rem' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--paper)', fontSize: '2.5rem' }}>Admin</h1>
-        <p style={{ color: 'var(--paper-dark)', fontSize: '0.9rem' }}>Manage user accounts for the trip group.</p>
+      <div style={{ background: 'var(--grad-hero)', padding: '3rem 2rem 2.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'var(--grad-accent)' }} />
+        <div style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-display)', fontSize: '8rem', color: 'rgba(255,255,255,0.06)', lineHeight: 1, userSelect: 'none' }}>管理</div>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'white', fontSize: '2.5rem', marginBottom: '0.4rem' }}>Admin</h1>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>Manage user accounts for the trip group.</p>
       </div>
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
@@ -129,6 +170,16 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Seed days */}
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 2rem 2rem' }}>
+        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-soft)' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', marginBottom: '0.25rem' }}>Bulk add days</h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--ink-light)', marginBottom: '1rem' }}>Insert every day in a date range into the trip itinerary. Skips dates that already exist.</p>
+          <SeedDaysForm onMessage={setSeedMsg} />
+          {seedMsg && <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: seedMsg.startsWith('✓') ? '#2e7d32' : 'var(--red)' }}>{seedMsg}</p>}
         </div>
       </div>
 
